@@ -35,13 +35,14 @@ if (program.resource) {
       '/data'
     ];
 
-    console.log(path.join(__dirname, '../node_modules'));
+    var templateDir = path.join(__dirname, '../node_modules/api-template'),
+        currentDir = process.cwd;
 
-    // sourceDirs.forEach(function(dir) {
-    //   var source = path.join(__dirname, '/node_modules/api-template', dir),
-    //       target 
-    //   wrench.copyDirSyncRecursive(source), 'location_where_copy_should_end_up');
-    // });
+    sourceDirs.forEach(function(dir) {
+      var source = path.join(templateDir, dir),
+          target = path.join(currentDir, dir);
+      wrench.copyDirSyncRecursive(source, target);
+    });
 
   } else {
 
