@@ -9,7 +9,8 @@ var program = require('commander'),
     wrench = require('wrench'),
     path = require('path'),
     os = require('os'),
-    fs = require('fs');
+    fs = require('fs'),
+    child_process = require('child_process');
 
 program
   .version(require('../package').version)
@@ -39,17 +40,17 @@ if (program.resource) {
 
     var templateDir = path.join(__dirname,
                         '../node_modules/api-template'),
-        currentDir = process.cwd();
+        currentDir = process.cwd(),
+        storage = {
+          exists: {}
+        };
 
   async.series(
     [
-      testExistence
-      ,
-      testFlushSystem
-      ,
-      copy
-      ,
-      refactor
+        testExistence
+      , testFlushSystem
+      , copy
+      , refactor
 
     ]
     ,
@@ -62,12 +63,13 @@ if (program.resource) {
       async.each(sourceDirs, function(dir, callback){
 
         var target = path.join(currentDir, dir);
-        var exists = fs.existsSync(target);
-
-        if (exists && !program.force) {
-          callback && callback(new Error(target));
-        }
-        callback && callback();
+        fs.exists(target, function(exists){
+          storage.exists[dir] = exists;
+          if (exists && !program.force) {
+            callback && callback(new Error(target));
+          }
+          callback && callback();
+        });
       },
       function(err){
         if (err) { callback(err) };
@@ -76,13 +78,21 @@ if (program.resource) {
     };
 
     function testFlushSystem(callback){
-      if (program.remove) {
-        sourceDirs.forEach(function(dir) {
-          var target = path.join(currentDir, dir);
-          wrench.rmdirSyncRecursive(target);
+      if (program.FLUSH) {
+        async.each(sourceDirs, function(dir, callback){
+          if (storage.exists[dir]) {
+            var target = path.join(currentDir, dir);
+            wrench.rmdirSyncRecursive(target);
+            console.log('     FLUSHED:     ' + target);
+          }
+        },
+        function(err){
+          if (err) { callback(err); }
+          process.exit(1);
         });
+      } else {
+        callback && callback(null, 'flush ok');
       }
-      callback && callback(null, 'flush ok');
     };
 
     function copy(callback){
@@ -100,7 +110,35 @@ if (program.resource) {
     };
 
     function refactor(callback){
-     callback(null, 'refactor ok');
+      var replacePath = path.join(__dirname, '../node_modules/replace/bin/replace.js'),
+          targets = [
+                      './data/schemas/item.js',
+                      './api/auth/owner.js'
+                    ];
+      async.each(targets, function(dir, callback){
+        async.series([
+          function(callback){
+            var args = ['#{Item}', '#{Item}', dir];
+            child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+              if (err) { abort(new Error(stderr)); }
+              callback && callback();
+            });
+          },
+          function(callback){
+            var args = ['#{item}', '#{item}', dir];
+            child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+              if (err) { abort(new Error(stderr)); }
+              callback && callback();
+            });
+          }], function(err, result){
+            if (err) { abort(err); }
+            callback && callback();
+          })
+      },
+      function(err){
+        if (err) { callback(err); }
+        callback(null, 'refactor ok');
+      });
     };
 
   } else {
@@ -117,12 +155,8 @@ if (program.resource) {
  */
 
 function abort(str) {
-  console.error('[ABORT:OR-FORCE]    ' + str);
-  if (program.forced) {
-    console.log('[FORCE:ACTIVATED]    ');
-  } else {
-    process.exit(1);
-  }
+  console.error('    [ABORT:OR-FORCE]    ' + str);
+  process.exit(1);
 }
 
 function appendApiToApp(callback) {

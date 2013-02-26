@@ -3,7 +3,7 @@ var mongoose = require('mongoose'),
 	ObjectId = Schema.ObjectId,
 	User = require('../models/user');
 
-var ItemSchema = new Schema({
+var #{Item}Schema = new Schema({
 
 	user: { type: ObjectId, ref: 'User', required: true },
 
@@ -19,4 +19,4 @@ var ItemSchema = new Schema({
 	date: { type: Date, default: Date.now() }
 });
 
-module.exports = ItemSchema;
+module.exports = #{Item}Schema;
