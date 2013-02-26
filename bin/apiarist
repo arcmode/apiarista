@@ -8,12 +8,14 @@ var program = require('commander'),
     async = require('async'),
     wrench = require('wrench'),
     path = require('path'),
-    os = require('os');
+    os = require('os'),
+    fs = require('fs');
 
 program
   .version(require('../package').version)
   .option('-r, --resource [ResourceName]', 'generate resource')
   .option('-f, --force', 'force on existing files')
+  .option('-X, --FLUSH', 'deletes the api')
   .parse(process.argv);
 
 // end-of-line code
@@ -35,19 +37,91 @@ if (program.resource) {
       '/data'
     ];
 
-    var templateDir = path.join(__dirname, '../node_modules/api-template'),
-        currentDir = process.cwd;
+    var templateDir = path.join(__dirname,
+                        '../node_modules/api-template'),
+        currentDir = process.cwd();
 
-    sourceDirs.forEach(function(dir) {
-      var source = path.join(templateDir, dir),
-          target = path.join(currentDir, dir);
-      wrench.copyDirSyncRecursive(source, target);
+  async.series(
+    [
+      testExistence
+      ,
+      testFlushSystem
+      ,
+      copy
+      ,
+      refactor
+
+    ]
+    ,
+    function(err, results){
+      if (err) { abort(err); }
+      console.log(results);
     });
+
+    function testExistence(callback){
+      async.each(sourceDirs, function(dir, callback){
+
+        var target = path.join(currentDir, dir);
+        var exists = fs.existsSync(target);
+
+        if (exists && !program.force) {
+          callback && callback(new Error(target));
+        }
+        callback && callback();
+      },
+      function(err){
+        if (err) { callback(err) };
+        callback(null, 'existence ok');
+      });
+    };
+
+    function testFlushSystem(callback){
+      if (program.remove) {
+        sourceDirs.forEach(function(dir) {
+          var target = path.join(currentDir, dir);
+          wrench.rmdirSyncRecursive(target);
+        });
+      }
+      callback && callback(null, 'flush ok');
+    };
+
+    function copy(callback){
+      async.each(sourceDirs, function(dir, callback){
+        var source = path.join(templateDir, dir),
+            target = path.join(currentDir, dir);
+
+        wrench.copyDirSyncRecursive(source, target);
+        callback && callback();
+      },
+      function(err){
+        if (err) { callback(err); }
+        callback(null, 'copy ok');
+      });
+    };
+
+    function refactor(callback){
+     callback(null, 'refactor ok');
+    };
 
   } else {
 
     abort('you must provide a resource name');
 
+  }
+}
+
+/**
+ * Exit with the given `str`.
+ *
+ * @param {String} str
+ */
+
+function abort(str) {
+  console.error('[ABORT:OR-FORCE]    ' + str);
+  if (program.forced) {
+    console.log('[FORCE:ACTIVATED]    ');
+  } else {
+    process.exit(1);
   }
 }
 
