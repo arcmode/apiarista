@@ -1,0 +1,26 @@
+{
+  "name": "apiarist",
+  "description": "Express friendly generators for api development",
+  "version": "0.0.1",
+  "author": "David Rojas <drojascamaggi@gmail.com>",
+  "dependencies": {
+    "commander": "0.6.1",
+    "mkdirp": "~0.3.4"
+  },
+  "keywords": [
+    "node",
+    "express",
+    "api",
+    "generator",
+    "framework",
+    "rest",
+    "restful"
+  ],
+  "repository": "git://github.com/drojas/apiarist",
+  "bin": {
+    "apiarist": "./bin/apiarist"
+  },
+  "engines": {
+    "node": "*"
+  }
+}

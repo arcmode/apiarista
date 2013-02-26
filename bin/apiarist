@@ -1,0 +1,344 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var program = require('commander'),
+    os = require('os'),
+    fs = require('fs'),
+    path = require('path'),
+    mkdirp = require('mkdirp');
+
+program
+  .version(require('../package').version)
+  .option('-r, --resource [ResourceName]', 'generate resource')
+  .option('-i, --init', 'append api code to app.js ')
+  .option('-f, --force', 'force on existing directories')
+  .parse(process.argv);
+
+// end-of-line code
+
+var eol = 'win32' == os.platform() ? '\r\n' : '\n';
+
+// utility to proper case the resource name
+
+String.prototype.toProperCase = function () {
+    return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+};
+
+// append api code to app.js if not present
+
+if (program.init) {
+  addBaseDirs(appendApiToApp);
+}
+
+// ensure resource data
+
+if (program.resource) {
+  if ('string' === typeof program.resource) {
+    createResource();
+  } else {
+    abort('you must provide at least a resource name');
+  }
+}
+
+function addBaseDirs(callback) {
+  var app = path.join(__dirname, 'app.js'),
+      dirs = [
+        '/data/schemas',
+        '/data/models',
+        '/api/auth',
+        '/api/resources'
+      ];
+  fs.exists(app, function(appExists){
+    if (appExists) {
+      for (var i = 0; i < dirs.length; i++) {
+        var dirPath = path.join(__dirname, dirs[i]);
+        var exists = fs.existsSync(dirPath);
+        if (!exists || program.force) {
+          mkdir(dirPath);
+        } else {
+          abort('directory: "' + dirPath + '" already exists, use --force');
+        }
+      }
+      callback && callback();
+    } else {
+      abort('app not found')
+    }
+  });
+}
+
+function addDirAt(dirPath) {
+  mkdir(dirPath);
+}
+
+function createResource() {
+
+  var resource = program.resource.toProperCase(),
+      fields = program.args,
+      schemaName = resource + 'Schema';
+  
+  var schemaCode = [
+      ''
+    , '/*'
+    , ' * ' + schemaName
+    , ' */'
+    , ''
+    , 'var mongoose = require(\'mongoose\'),'
+    , '    Schema = mongoose.Schema;'
+    , ''
+    , 'var ' + schemaName + ' = new Schema({'
+    , ''
+  ];
+
+  for (var i = 0; i < fields.length; i++) {
+    var field = fields[i],
+        name = field.split(':'),
+        type;
+    if (name.length === 2) {
+      type = name.pop().toProperCase();
+    } else if (name.length === 1) {
+      type = 'String';
+    } else {
+      abort('wrong input -> ' + field );
+    }
+    name = name[0].toLowerCase();
+    schemaCode.push('    ' + name + ': ' + type + ',');
+  };
+
+  schemaCode = schemaCode.concat(
+    [
+        ''
+      , '    date = { type: Date, default: Date.now() }'
+      , '});'
+      , ''
+      , 'module.exports = ' + schemaName + ';'
+      , ''
+    ]
+  );
+
+  schemaCode = schemaCode.join(eol);
+
+};
+
+function appendApiToApp() {
+
+  var requireString = 'require(\'./api\')(app);',
+      appCode = [
+      ''
+    , '/*'
+    , ' * Api initialization'
+    , ' */'
+    , ''
+    , requireString
+    , ''
+  ].join(eol);
+
+  var app = path.join(__dirname, 'app.js');
+  fs.exists(app, function(exists){
+    if (exists) {
+      fs.stat(app, function(err, stats) {
+        if (err) { abort(err); }
+        fs.open(app, 'a+', 0666, function(err, fd){
+          if (err) { abort(err); }
+          fs.read(fd, new Buffer(stats.size), 0, stats.size, 0, function(err, bytesRead, buffer) {
+
+            var text = buffer.toString('utf8', 0, bytesRead),
+                lines = text.split(eol),
+                already = lines.indexOf(requireString) >= 0;
+
+            if (already) {
+              console.log('   api already appended to app');
+            } else {
+              fs.write(fd, appCode, null, 'utf8', function(){
+                fs.close(fd, function(){
+                  console.log('   api just appended to app');
+                });
+              });
+            }
+
+          });
+        });
+      });
+    } else {
+      abort('app not found')
+    }
+  });
+};
+
+// Generate resource
+
+// (function createResource(path) {
+//   emptyDirectory(path, function(empty){
+//     if (empty || program.force) {
+//       createResourceAt(path);
+//     } else {
+//       program.confirm('destination is not empty, continue? ', function(ok){
+//         if (ok) {
+//           process.stdin.destroy();
+//           createApplicationAt(path);
+//         } else {
+//           abort('aborting');
+//         }
+//       });
+//     }
+//   });
+// })(path);
+
+// /**
+//  * Create resource at the given directory `path`.
+//  *
+//  * @param {String} path
+//  */
+
+// function createResourceAt(path) {
+//   console.log();
+//   process.on('exit', function(){
+//     console.log();
+//     console.log('   done generating');
+//     console.log();
+//   });
+
+//   mkdir(path, function(){
+//     mkdir(path + '/public');
+//     mkdir(path + '/public/javascripts');
+//     mkdir(path + '/public/images');
+//     mkdir(path + '/public/stylesheets', function(){
+//       switch (program.css) {
+//         case 'less':
+//           write(path + '/public/stylesheets/style.less', less);
+//           break;
+//         case 'stylus':
+//           write(path + '/public/stylesheets/style.styl', stylus);
+//           break;
+//         default:
+//           write(path + '/public/stylesheets/style.css', css);
+//       }
+//     });
+
+//     mkdir(path + '/routes', function(){
+//       write(path + '/routes/index.js', index);
+//       write(path + '/routes/user.js', users);
+//     });
+
+//     mkdir(path + '/views', function(){
+//       switch (program.template) {
+//         case 'ejs':
+//           write(path + '/views/index.ejs', ejsIndex);
+//           break;
+//         case 'jade':
+//           write(path + '/views/layout.jade', jadeLayout);
+//           write(path + '/views/index.jade', jadeIndex);
+//           break;
+//         case 'jshtml':
+//           write(path + '/views/layout.jshtml', jshtmlLayout);
+//           write(path + '/views/index.jshtml', jshtmlIndex);
+//           break;
+//         case 'hjs':
+//           write(path + '/views/index.hjs', hoganIndex);
+//           break;
+
+//       }
+//     });
+
+//     // CSS Engine support
+//     switch (program.css) {
+//       case 'less':
+//         app = app.replace('{css}', eol + '  app.use(require(\'less-middleware\')({ src: __dirname + \'/public\' }));');
+//         break;
+//       case 'stylus':
+//         app = app.replace('{css}', eol + '  app.use(require(\'stylus\').middleware(__dirname + \'/public\'));');
+//         break;
+//       default:
+//         app = app.replace('{css}', '');
+//     }
+
+//     // Session support
+//     app = app.replace('{sess}', program.sessions
+//       ? eol + '  app.use(express.cookieParser(\'your secret here\'));' + eol + '  app.use(express.session());'
+//       : '');
+
+//     // Template support
+//     app = app.replace(':TEMPLATE', program.template);
+
+//     // package.json
+//     var pkg = {
+//         name: 'application-name'
+//       , version: '0.0.1'
+//       , private: true
+//       , scripts: { start: 'node app' }
+//       , dependencies: {
+//         express: version
+//       }
+//     }
+
+//     if (program.template) pkg.dependencies[program.template] = '*';
+
+//     // CSS Engine support
+//     switch (program.css) {
+//       case 'less':
+//         pkg.dependencies['less-middleware'] = '*';
+//         break;
+//       default:
+//         if (program.css) {
+//           pkg.dependencies[program.css] = '*';
+//         }
+//     }
+
+//     write(path + '/package.json', JSON.stringify(pkg, null, 2));
+//     write(path + '/app.js', app);
+//   });
+// }
+
+/**
+ * Check if the given directory `path` is empty.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ */
+
+function emptyDirectory(path, fn) {
+  fs.readdir(path, function(err, files){
+    if (err && 'ENOENT' != err.code) throw err;
+    fn(!files || !files.length);
+  });
+}
+
+/**
+ * echo str > path.
+ *
+ * @param {String} path
+ * @param {String} str
+ */
+
+function write(path, str) {
+  fs.writeFile(path, str);
+  console.log('   \x1b[36mcreate\x1b[0m : ' + path);
+}
+
+/**
+ * Mkdir -p.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ */
+
+function mkdir(path, fn) {
+  mkdirp(path, 0755, function(err){
+    if (err) throw err;
+    console.log('   \033[36mcreate\033[0m : ' + path);
+    fn && fn();
+  });
+}
+
+/**
+ * Exit with the given `str`.
+ *
+ * @param {String} str
+ */
+
+function abort(str) {
+  console.error(str);
+  process.exit(1);
+}
