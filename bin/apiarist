@@ -111,34 +111,56 @@ if (program.resource) {
 
     function refactor(callback){
       var replacePath = path.join(__dirname, '../node_modules/replace/bin/replace.js'),
+          ItemSchemaPath = './data/schemas/item.js',
           targets = [
-                      './data/schemas/item.js',
+                      ItemSchemaPath,
                       './api/auth/owner.js'
                     ];
-      async.each(targets, function(dir, callback){
-        async.series([
-          function(callback){
-            var args = ['#{Item}', '#{Item}', dir];
-            child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-              if (err) { abort(new Error(stderr)); }
+
+      async.series([
+            replaceNames
+          , renameFile
+          , injectBlocks
+
+        ], function(err, result) { 
+          if (err) { abort(err); }
+          callback(null, 'refactor ok');
+        });
+
+      function replaceNames(callback) {
+        async.each(targets, function(dir, callback){
+          async.series([
+            function(callback){
+              var args = ['#{Item}', '#{Item}', dir];
+              child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+                if (err) { abort(new Error(stderr)); }
+                callback && callback();
+              });
+            },
+            function(callback){
+              var args = ['#{item}', '#{item}', dir];
+              child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+                if (err) { abort(new Error(stderr)); }
+                callback && callback();
+              });
+            }], function(err, result){
+              if (err) { abort(err); }
               callback && callback();
-            });
-          },
-          function(callback){
-            var args = ['#{item}', '#{item}', dir];
-            child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-              if (err) { abort(new Error(stderr)); }
-              callback && callback();
-            });
-          }], function(err, result){
-            if (err) { abort(err); }
-            callback && callback();
-          })
-      },
-      function(err){
-        if (err) { callback(err); }
-        callback(null, 'refactor ok');
-      });
+            })
+        },
+        function(err){
+          if (err) { callback(err); }
+          callback && callback();
+        });
+      };
+      function renameFile(callback) {
+        fs.rename(ItemSchemaPath, ItemSchemaPath.replace('#item', '#item'), function(){
+          callback && callback();
+        });
+      };
+      function injectBlocks(callback) {
+        callback && callback();
+      };
     };
 
   } else {
