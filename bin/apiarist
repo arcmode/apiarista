@@ -30,180 +30,179 @@ String.prototype.toProperCase = function () {
     return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 };
 
-if (program.resource) {
+var sourceDirs = [
+  '/api',
+  '/data'
+];
 
-  if ('string' === typeof program.resource) {
+var templateDir = path.join(__dirname,
+                    '../node_modules/api-template'),
+    currentDir = process.cwd(),
+    storage = {
+      exists: {}
+    };
 
-    var sourceDirs = [
-      '/api',
-      '/data'
-    ];
+var pipeline = [];
 
-    var templateDir = path.join(__dirname,
-                        '../node_modules/api-template'),
-        currentDir = process.cwd(),
-        storage = {
-          exists: {}
-        };
+if (program.FLUSH) {
 
-  async.series(
-    [
-        testExistence
-      , testFlushSystem
-      , copy
-      , refactor
+  pipeline = [testExistence, testFlushSystem];
 
-    ]
-    ,
-    function(err, results){
-      if (err) { abort(err); }
-      console.log();
-      for (var i = 0; i < results.length; i++) {
-        console.log('    ' + results[i].replace(' ', '\t'));
-      };
-      console.log();
-      console.log('    Add the following line to your app.js or main script...');
-      console.log();
-      console.log('    ->   require(\'./api\')(app);');
-      console.log();
+} else if (program.resource && typeof program.resource === 'string') {
+
+  pipeline = [
+    testExistence
+  , copy
+  , refactor
+  ]
+
+} else {
+
+  abort('    must provide some input, try --help')
+}
+
+async.series(pipeline,
+function(err, results){
+  if (err) { abort(err); }
+  console.log();
+  for (var i = 0; i < results.length; i++) {
+    console.log('    ' + results[i].replace(' ', '\t'));
+  };
+  console.log();
+  console.log('    Add the following line to your app.js or main script...');
+  console.log();
+  console.log('    ->   require(\'./api\')(app);');
+  console.log();
+});
+
+function testExistence(callback){
+  async.each(sourceDirs, function(dir, callback){
+
+    var target = path.join(currentDir, dir);
+    fs.exists(target, function(exists){
+      storage.exists[dir] = exists;
+      callback && callback();
+    });
+  },
+  function(err){
+    if (err) { callback(err) };
+    callback(null, 'existence OK');
+  });
+};
+
+function testFlushSystem(callback){
+    async.each(sourceDirs, function(dir, callback){
+      if (storage.exists[dir]) {
+        var target = path.join(currentDir, dir);
+        wrench.rmdirSyncRecursive(target);
+        console.log('     FLUSHED:     ' + target);
+      }
+    },
+    function(err){
+      if (err) { callback(err); }
+      callback && callback(null, 'flush OK');
+    });
+};
+
+function copy(callback){
+  async.each(sourceDirs, function(dir, callback){
+    var source = path.join(templateDir, dir),
+        target = path.join(currentDir, dir);
+
+    var exists = storage.exists[dir];
+
+    if (!exists){
+      wrench.copyDirSyncRecursive(source, target);
+    }
+    callback && callback();
+  },
+  function(err){
+    if (err) { callback(err); }
+    callback(null, 'copy OK');
+  });
+};
+
+function refactor(callback){
+  var replacePath = path.join(__dirname, '../node_modules/replace/bin/replace.js'),
+      ItemSchemaPath = './data/schemas/item.js',
+      ItemModelPath = './data/models/item.js',
+      targets = [
+                  ItemSchemaPath,
+                  ItemModelPath,
+                  './api/auth/owner.js'
+                ];
+
+  async.series([
+        replaceNames
+      , injectBlocks
+      , renameFile
+
+    ], function(err, result) { 
+      if (err) { callback(err); }
+      callback(null, 'refactor OK');
     });
 
-    function testExistence(callback){
-      async.each(sourceDirs, function(dir, callback){
-
-        var target = path.join(currentDir, dir);
-        fs.exists(target, function(exists){
-          storage.exists[dir] = exists;
-          if (exists && !program.force) {
-            callback && callback(new Error(target));
-          }
-          callback && callback();
-        });
-      },
-      function(err){
-        if (err) { callback(err) };
-        callback(null, 'existence OK');
-      });
-    };
-
-    function testFlushSystem(callback){
-      if (program.FLUSH) {
-        async.each(sourceDirs, function(dir, callback){
-          if (storage.exists[dir]) {
-            var target = path.join(currentDir, dir);
-            wrench.rmdirSyncRecursive(target);
-            console.log('     FLUSHED:     ' + target);
-          }
-        },
-        function(err){
-          if (err) { callback(err); }
-          process.exit(1);
-        });
-      } else {
-        callback && callback(null, 'flush OK');
-      }
-    };
-
-    function copy(callback){
-      async.each(sourceDirs, function(dir, callback){
-        var source = path.join(templateDir, dir),
-            target = path.join(currentDir, dir);
-
-        wrench.copyDirSyncRecursive(source, target);
-        callback && callback();
-      },
-      function(err){
-        if (err) { callback(err); }
-        callback(null, 'copy OK');
-      });
-    };
-
-    function refactor(callback){
-      var replacePath = path.join(__dirname, '../node_modules/replace/bin/replace.js'),
-          ItemSchemaPath = './data/schemas/item.js',
-          ItemModelPath = './data/models/item.js',
-          targets = [
-                      ItemSchemaPath,
-                      ItemModelPath,
-                      './api/auth/owner.js'
-                    ];
-
+  function replaceNames(callback) {
+    async.each(targets, function(dir, callback){
       async.series([
-            replaceNames
-          , injectBlocks
-          , renameFile
-
-        ], function(err, result) { 
-          if (err) { abort(err); }
-          callback(null, 'refactor OK');
-        });
-
-      function replaceNames(callback) {
-        async.each(targets, function(dir, callback){
-          async.series([
-            function(callback){
-              var args = ['#{Item}', program.resource.toProperCase(), dir];
-              child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-                if (err) { abort(new Error(stderr)); }
-                callback && callback();
-              });
-            },
-            function(callback){
-              var args = ['#{item}', program.resource.toLowerCase(), dir];
-              child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-                if (err) { abort(new Error(stderr)); }
-                callback && callback();
-              });
-            }], function(err, result){
-              if (err) { abort(err); }
-              callback && callback();
-            })
+        function(callback){
+          var args = ['#{Item}', program.resource.toProperCase(), dir];
+          child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+            if (err) { abort(new Error(stderr)); }
+            callback && callback();
+          });
         },
-        function(err){
+        function(callback){
+          var args = ['#{item}', program.resource.toLowerCase(), dir];
+          child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+            if (err) { abort(new Error(stderr)); }
+            callback && callback();
+          });
+        }], function(err, result){
           if (err) { callback(err); }
           callback && callback();
-        });
-      };
-      function renameFile(callback) {
-        async.parallel([
-            function(callback){
-              fs.rename(ItemSchemaPath, ItemSchemaPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
-                callback && callback();
-              });
-            },
-            function(callback){
-              fs.rename(ItemModelPath, ItemModelPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
-                callback && callback();
-              });
-            }
-          ], function(err, results){
-          callback && callback();
-        });
-      };
-      function injectBlocks(callback) {
-        var targetPath = './data/schemas/item.js';
+        })
+    },
+    function(err){
+      if (err) { callback(err); }
+      callback && callback();
+    });
+  };
 
-        var fields = program.args,
-            fieldsCode = [''];
+  function injectBlocks(callback) {
+    var targetPath = './data/schemas/item.js';
 
-        for (var i = 0; i < fields.length; i++) {
-          fieldsCode.push('  ' + fields[i]  + ',');
-        };
+    var fields = program.args,
+        fieldsCode = [''];
 
-        var args = ['//FIELDS PLACEHOLDER', fieldsCode.join(eol), targetPath];
-        child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-          if (err) { abort(new Error(stderr)); }
-          callback && callback();
-        });
-      };
+    for (var i = 0; i < fields.length; i++) {
+      fieldsCode.push('  ' + fields[i]  + ',');
     };
 
-  } else {
+    var args = ['//FIELDS PLACEHOLDER', fieldsCode.join(eol), targetPath];
+    child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+      if (err) { abort(new Error(stderr)); }
+      callback && callback();
+    });
+  };
 
-    abort('you must provide a resource name');
-
-  }
-}
+  function renameFile(callback) {
+    async.parallel([
+        function(callback){
+          fs.rename(ItemSchemaPath, ItemSchemaPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
+            callback && callback();
+          });
+        },
+        function(callback){
+          fs.rename(ItemModelPath, ItemModelPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
+            callback && callback();
+          });
+        }
+      ], function(err, results){
+      callback && callback();
+    });
+  };
+};
 
 /**
  * Exit with the given `str`.
@@ -213,7 +212,7 @@ if (program.resource) {
 
 function abort(str) {
   console.log();
-  console.error('    [ABORT:OR-FORCE]    ' + str);
+  console.error('    ' + str);
   console.log();
   process.exit(1);
 }
