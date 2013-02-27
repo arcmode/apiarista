@@ -36,12 +36,13 @@ var templateDir = path.join(__dirname, '../node_modules/api-template'),
 
 var data = {
   pipeline: [
-    testApp,
-    createCommonDirs,
-    createCommonFiles,
-    checkResourceExistence,
-    createResource
+      testApp
+    , createCommonDirs
+    , createCommonFiles
+    , checkResourceExistence
+    , createResource
   ],
+  mkdirMode: 0777 & (~process.umask()),
   app: undefined,
   absent: [],
   present: [],
@@ -100,13 +101,12 @@ function createCommonDirs(callback) {
 
   dirs.forEach(function(dir){
     dirPath = path.join(currentDir, dir);
-    var mode = 0777 & (~process.umask()),
         exists = fs.existsSync(dirPath);
     if (exists) {
       data.present.push(dirPath);
     } else {
       data.absent.push(dirPath);
-      fs.mkdirSync(dirPath, mode);
+      fs.mkdirSync(dirPath, data.mkdirMode);
       data.created.push(dirPath);
     }
   });
@@ -166,7 +166,7 @@ function checkResourceExistence(callback){
         exists = fs.existsSync(realPath);
     if (exists) {
       data.present.push(realPath);
-      abort('exists -> ' + realPath);
+      callback(new Error('exists -> ' + realPath));
     } else {
       data.absent.push(realPath);
     }
@@ -182,6 +182,8 @@ function createResource(callback){
         var p = [
           '/data/schemas/' + resource + '.js',
           '/data/models/' + resource + '.js',
+          '/api/resources/' + resource,
+          '/api/resources/' + resource + '/crud',
           '/api/resources/' + resource + '/crud/index.js',
           '/api/resources/' + resource + '/crud/list.js',
           '/api/resources/' + resource + '/crud/create.js',
@@ -192,17 +194,22 @@ function createResource(callback){
         return p;
       }
 
-  paths(resourceName).forEach(function(_path, index){
-    var realPath = path.join(currentDir, _path),
-        exists = fs.existsSync(realPath);
+  paths(resourceName).forEach(function(resourcePath, index){
+    var targetRealPath = path.join(currentDir, resourcePath),
+        exists = fs.existsSync(targetRealPath);
     if (exists) {
-      data.present.push(realPath);
+      data.present.push(targetRealPath);
     } else {
-      var templateFilePath = path.join(templateDir, paths()[index]),
-          templateFileContent = fs.readFileSync(templateFilePath);
-      data.absent.push(realPath)
-      fs.writeFileSync(realPath, templateFileContent, 'utf8');
-      data.created.push(realPath)
+      data.absent.push(targetRealPath)
+      var ext = path.extname(targetRealPath);
+      if (ext !== '.js') {
+        fs.mkdirSync(targetRealPath, data.mkdirMode);
+      } else {
+        var originRealPath = path.join(templateDir, paths()[index]),
+          templateFileContent = fs.readFileSync(originRealPath);
+        fs.writeFileSync(targetRealPath, templateFileContent, 'utf8');
+      }
+      data.created.push(targetRealPath)
     }
   });
   callback(null, 'createFiles');
