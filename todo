@@ -1,0 +1,30 @@
+-- get generator
+
+		apiarista init
+			-> create base with User Consumer
+		apiarista generate
+			-> create a resource named 'Resource'
+		apiarista generate [ResourceName]
+			-> generate a resource with custom name [ResourceName]
+
+-- rename project to apiarista-template? (and api folder to apiarista? (and apiarista's bin file to api?) )
+
+-- commands to be used
+	
+	npm install apiarista
+
+	// basic usage
+
+	api resource blog name:String     |or|    api resource blog "name : { type: String }" active:Boolean
+
+	// resource as a relationship
+
+	api resource has "user : { type: ObjectId, ref: 'User' }" "blog : { type: ObjectId, ref: 'Blog' }"
+
+	// shorcut for relationships
+
+	api relationsip user has blog
+
+	// shortcuts for schema constructor
+
+	api resource job position:required:unique description:null

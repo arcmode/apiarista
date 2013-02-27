@@ -1,0 +1,352 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var program = require('commander'),
+    async = require('async'),
+    wrench = require('wrench'),
+    path = require('path'),
+    os = require('os'),
+    fs = require('fs'),
+    child_process = require('child_process');
+
+program
+  .version(require('../package').version)
+  .option('-r, resource [ResourceName]', 'generate resource')
+  .parse(process.argv);
+
+// end-of-line code
+
+var eol = 'win32' == os.platform() ? '\r\n' : '\n';
+
+// utility to propercase the resource name
+
+String.prototype.toProperCase = function () {
+    return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+};
+
+// dirs to operate
+
+var templateDir = path.join(__dirname, '../node_modules/api-template'),
+    currentDir = process.cwd();
+
+// data used during operations
+
+var data = {
+  pipeline: [
+    testApp,
+    createCommonDirs,
+    createCommonFiles,
+    checkResourceExistence,
+    createResource
+  ],
+  app: undefined,
+  absent: [],
+  present: [],
+  created: []
+}
+
+// operate in series
+
+async.series(data.pipeline, function(err, results){
+
+  if (err) { abort(err); }
+
+  console.log();
+
+  console.log(data);
+
+  console.log();
+
+  console.log('    END');
+});
+
+function testApp(callback){
+  fs.exists(path.join(currentDir, '/app.js'), function(exists){
+    if (exists) {
+      data.app = '/app.js';
+      data.present.push(data.app);
+      callback();
+    } else {
+      fs.exists(path.join(currentDir, '/server.js'), function(exists){
+        if (exists) {
+          data.app = '/server.js';
+          data.present.push(data.app);
+          callback();
+        } else {
+          data.absent.push(data.app);
+          abort('    app/server not found')
+        }
+      });
+    }
+  });
+};
+
+function createCommonDirs(callback) {
+  var dirs = [
+    '/data',
+    '/data/schemas',
+    '/data/models',
+    '/api',
+    '/api/auth',
+    '/api/resources',
+    '/api/resources/consumer',
+    '/api/resources/consumer/crud',
+    '/api/resources/user',
+    '/api/resources/user/crud'
+  ];
+
+  dirs.forEach(function(dir){
+    dirPath = path.join(currentDir, dir);
+    var mode = 0777 & (~process.umask()),
+        exists = fs.existsSync(dirPath);
+    if (exists) {
+      data.present.push(dirPath);
+    } else {
+      data.absent.push(dirPath);
+      fs.mkdirSync(dirPath, mode);
+      data.created.push(dirPath);
+    }
+  });
+  callback(null, 'createDirs');
+};
+
+function createCommonFiles(callback) {
+  var files = [
+    '/data/schemas/user.js',
+    '/data/schemas/consumer.js',
+    '/api/index.js',
+    '/api/auth/same.js',
+    '/api/auth/user.js',
+    '/api/auth/consumer.js',
+    '/api/resources/user/crud/index.js',
+    '/api/resources/user/crud/list.js',
+    '/api/resources/user/crud/create.js',
+    '/api/resources/user/crud/read.js',
+    '/api/resources/user/crud/update.js',
+    '/api/resources/user/crud/delete.js',
+    '/api/resources/consumer/crud/index.js',
+    '/api/resources/consumer/crud/create.js',
+    '/api/resources/consumer/crud/delete.js'
+  ];
+
+  files.forEach(function(file){
+    var filePath = path.join(currentDir, file),
+        exists = fs.existsSync(filePath);
+    if (exists) {
+      data.present.push(filePath);
+    } else {
+      var templateFilePath = path.join(templateDir, file),
+          templateFileContent = fs.readFileSync(templateFilePath);
+      data.absent.push(filePath)
+      fs.writeFileSync(filePath, templateFileContent, 'utf8');
+      data.created.push(filePath)
+    }
+  });
+  callback(null, 'createFiles');
+}
+
+function checkResourceExistence(callback){
+  var resourceName = program.resource,
+      paths = [
+        '/data/schemas/' + resourceName + '.js',
+        '/data/models/' + resourceName + '.js',
+        '/api/resources/' + resourceName + '/crud/index.js',
+        '/api/resources/' + resourceName + '/crud/list.js',
+        '/api/resources/' + resourceName + '/crud/create.js',
+        '/api/resources/' + resourceName + '/crud/read.js',
+        '/api/resources/' + resourceName + '/crud/update.js',
+        '/api/resources/' + resourceName + '/crud/delete.js'
+      ];
+
+  paths.forEach(function(_path){
+    var realPath = path.join(currentDir, _path),
+        exists = fs.existsSync(realPath);
+    if (exists) {
+      data.present.push(realPath);
+      abort('exists -> ' + realPath);
+    } else {
+      data.absent.push(realPath);
+    }
+  });
+  callback(null, '    checkResourceExistence')
+}
+
+function createResource(callback){
+  var resourceName = program.resource,
+      paths = function(name){
+        var defaultName = 'resource';
+        resource = (name && name.toLowerCase()) || defaultName;
+        var p = [
+          '/data/schemas/' + resource + '.js',
+          '/data/models/' + resource + '.js',
+          '/api/resources/' + resource + '/crud/index.js',
+          '/api/resources/' + resource + '/crud/list.js',
+          '/api/resources/' + resource + '/crud/create.js',
+          '/api/resources/' + resource + '/crud/read.js',
+          '/api/resources/' + resource + '/crud/update.js',
+          '/api/resources/' + resource + '/crud/delete.js'
+        ];
+        return p;
+      }
+
+  paths(resourceName).forEach(function(_path, index){
+    var realPath = path.join(currentDir, _path),
+        exists = fs.existsSync(realPath);
+    if (exists) {
+      data.present.push(realPath);
+    } else {
+      var templateFilePath = path.join(templateDir, paths()[index]),
+          templateFileContent = fs.readFileSync(templateFilePath);
+      data.absent.push(realPath)
+      fs.writeFileSync(realPath, templateFileContent, 'utf8');
+      data.created.push(realPath)
+    }
+  });
+  callback(null, 'createFiles');
+};
+
+function testExistence(callback){
+  async.each(sourceDirs, function(dir, callback){
+
+    var target = path.join(currentDir, dir);
+    fs.exists(target, function(exists){
+      storage.exists[dir] = exists;
+      callback && callback();
+    });
+  },
+  function(err){
+    if (err) { callback(err) };
+    callback(null, 'existence OK');
+  });
+};
+
+function copy(callback){
+  async.each(sourceDirs, function(dir, callback){
+    var source = path.join(templateDir, dir),
+        target = path.join(currentDir, dir);
+
+    var exists = storage.exists[dir];
+
+    if (!exists){
+      console.log('not exists', dir);
+      wrench.copyDirSyncRecursive(source, target);
+    }
+    callback && callback();
+  },
+  function(err){
+    if (err) { callback(err); }
+    callback(null, 'copy OK');
+  });
+};
+
+function refactor(callback){
+  var replacePath = path.join(__dirname, '../node_modules/replace/bin/replace.js'),
+      ItemSchemaPath = './data/schemas/item.js',
+      ItemModelPath = './data/models/item.js',
+      targets = [
+                  ItemSchemaPath,
+                  ItemModelPath,
+                  './api/auth/owner.js'
+                ];
+
+  async.series([
+        replaceNames
+      , injectBlocks
+      , renameFile
+
+    ], function(err, result) { 
+      if (err) { callback(err); }
+      callback(null, 'refactor OK');
+    });
+
+  function replaceNames(callback) {
+    async.each(targets, function(dir, callback){
+      async.series([
+        function(callback){
+          var args = ['#{Item}', program.resource.toProperCase(), dir];
+          child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+            if (err) { abort(new Error(stderr)); }
+            callback && callback();
+          });
+        },
+        function(callback){
+          var args = ['#{item}', program.resource.toLowerCase(), dir];
+          child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+            if (err) { abort(new Error(stderr)); }
+            callback && callback();
+          });
+        }], function(err, result){
+          if (err) { callback(err); }
+          callback && callback();
+        })
+    },
+    function(err){
+      if (err) { callback(err); }
+      callback && callback();
+    });
+  };
+
+  function injectBlocks(callback) {
+    var targetPath = './data/schemas/item.js';
+
+    var fields = program.args,
+        fieldsCode = [''];
+
+    for (var i = 0; i < fields.length; i++) {
+      fieldsCode.push('  ' + fields[i]  + ',');
+    };
+
+    var args = ['//FIELDS PLACEHOLDER', fieldsCode.join(eol), targetPath];
+    child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+      if (err) { abort(new Error(stderr)); }
+      callback && callback();
+    });
+  };
+
+  function renameFile(callback) {
+    async.parallel([
+        function(callback){
+          fs.rename(ItemSchemaPath, ItemSchemaPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
+            callback && callback();
+          });
+        },
+        function(callback){
+          fs.rename(ItemModelPath, ItemModelPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
+            callback && callback();
+          });
+        }
+      ], function(err, results){
+      callback && callback();
+    });
+  };
+};
+
+/**
+ * Exit with the given `str`.
+ *
+ * @param {String} str
+ */
+
+function abort(str) {
+  console.log();
+  console.error('    ' + str);
+  console.log();
+  process.exit(1);
+}
+
+function flushSystem(callback){
+    async.each(sourceDirs, function(dir, callback){
+      if (storage.exists[dir]) {
+        var target = path.join(currentDir, dir);
+        wrench.rmdirSyncRecursive(target);
+        console.log('     FLUSHED:     ' + target);
+      }
+    },
+    function(err){
+      if (err) { callback(err); }
+      callback && callback(null, 'flush OK');
+    });
+};
