@@ -1,3 +1,6 @@
 node_modules/
+bin/data
+bin/api
+bin/app.js
 .DS_Store
 *.log

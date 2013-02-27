@@ -10,11 +10,12 @@ var program = require('commander'),
     path = require('path'),
     os = require('os'),
     fs = require('fs'),
-    child_process = require('child_process');
+    child_process = require('child_process'),
+    util = require('util');
 
 program
   .version(require('../package').version)
-  .option('-r, --resource [ResourceName]', 'generate resource')
+  .option('-r, resource [ResourceName]', 'generate resource')
   .option('-f, --force', 'force on existing files')
   .option('-X, --FLUSH', 'deletes the api')
   .parse(process.argv);
@@ -56,7 +57,15 @@ if (program.resource) {
     ,
     function(err, results){
       if (err) { abort(err); }
-      console.log(results);
+      console.log();
+      for (var i = 0; i < results.length; i++) {
+        console.log('    ' + results[i].replace(' ', '\t'));
+      };
+      console.log();
+      console.log('    Add the following line to your app.js or main script...');
+      console.log();
+      console.log('    ->   require(\'./api\')(app);');
+      console.log();
     });
 
     function testExistence(callback){
@@ -73,7 +82,7 @@ if (program.resource) {
       },
       function(err){
         if (err) { callback(err) };
-        callback(null, 'existence ok');
+        callback(null, 'existence OK');
       });
     };
 
@@ -91,7 +100,7 @@ if (program.resource) {
           process.exit(1);
         });
       } else {
-        callback && callback(null, 'flush ok');
+        callback && callback(null, 'flush OK');
       }
     };
 
@@ -105,40 +114,42 @@ if (program.resource) {
       },
       function(err){
         if (err) { callback(err); }
-        callback(null, 'copy ok');
+        callback(null, 'copy OK');
       });
     };
 
     function refactor(callback){
       var replacePath = path.join(__dirname, '../node_modules/replace/bin/replace.js'),
           ItemSchemaPath = './data/schemas/item.js',
+          ItemModelPath = './data/models/item.js',
           targets = [
                       ItemSchemaPath,
+                      ItemModelPath,
                       './api/auth/owner.js'
                     ];
 
       async.series([
             replaceNames
-          , renameFile
           , injectBlocks
+          , renameFile
 
         ], function(err, result) { 
           if (err) { abort(err); }
-          callback(null, 'refactor ok');
+          callback(null, 'refactor OK');
         });
 
       function replaceNames(callback) {
         async.each(targets, function(dir, callback){
           async.series([
             function(callback){
-              var args = ['#{Item}', '#{Item}', dir];
+              var args = ['#{Item}', program.resource.toProperCase(), dir];
               child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
                 if (err) { abort(new Error(stderr)); }
                 callback && callback();
               });
             },
             function(callback){
-              var args = ['#{item}', '#{item}', dir];
+              var args = ['#{item}', program.resource.toLowerCase(), dir];
               child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
                 if (err) { abort(new Error(stderr)); }
                 callback && callback();
@@ -154,12 +165,36 @@ if (program.resource) {
         });
       };
       function renameFile(callback) {
-        fs.rename(ItemSchemaPath, ItemSchemaPath.replace('#item', '#item'), function(){
+        async.parallel([
+            function(callback){
+              fs.rename(ItemSchemaPath, ItemSchemaPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
+                callback && callback();
+              });
+            },
+            function(callback){
+              fs.rename(ItemModelPath, ItemModelPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
+                callback && callback();
+              });
+            }
+          ], function(err, results){
           callback && callback();
         });
       };
       function injectBlocks(callback) {
-        callback && callback();
+        var targetPath = './data/schemas/item.js';
+
+        var fields = program.args,
+            fieldsCode = [''];
+
+        for (var i = 0; i < fields.length; i++) {
+          fieldsCode.push('  ' + fields[i]  + ',');
+        };
+
+        var args = ['//FIELDS PLACEHOLDER', fieldsCode.join(eol), targetPath];
+        child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+          if (err) { abort(new Error(stderr)); }
+          callback && callback();
+        });
       };
     };
 
@@ -177,53 +212,8 @@ if (program.resource) {
  */
 
 function abort(str) {
+  console.log();
   console.error('    [ABORT:OR-FORCE]    ' + str);
+  console.log();
   process.exit(1);
 }
-
-function appendApiToApp(callback) {
-
-  var requireString = 'require(\'./api\')(app);',
-      appCode = [
-      ''
-    , '/*'
-    , ' * Api initialization'
-    , ' */'
-    , ''
-    , requireString
-    , ''
-  ].join(eol);
-
-  var app = path.join(__dirname, 'app.js');
-  fs.exists(app, function(exists){
-    if (exists) {
-      fs.stat(app, function(err, stats) {
-        if (err) { abort(err); }
-        fs.open(app, 'a+', 0666, function(err, fd){
-          if (err) { abort(err); }
-          fs.read(fd, new Buffer(stats.size), 0, stats.size, 0, function(err, bytesRead, buffer) {
-
-            var text = buffer.toString('utf8', 0, bytesRead),
-                lines = text.split(eol),
-                already = lines.indexOf(requireString) >= 0;
-
-            if (already) {
-              console.log('   api already appended to app');
-              callback && callback();
-            } else {
-              fs.write(fd, appCode, null, 'utf8', function(){
-                fs.close(fd, function(){
-                  console.log('   api just appended to app');
-                  callback && calback();
-                });
-              });
-            }
-
-          });
-        });
-      });
-    } else {
-      abort('app not found')
-    }
-  });
-};
