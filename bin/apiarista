@@ -10,7 +10,8 @@ var program = require('commander'),
     path = require('path'),
     os = require('os'),
     fs = require('fs'),
-    child_process = require('child_process');
+    child_process = require('child_process'),
+    replace = require('replace');
 
 program
   .version(require('../package').version)
@@ -41,6 +42,8 @@ var data = {
     , createCommonFiles
     , checkResourceExistence
     , createResource
+    , replaceNames
+    , upgradeSchema
   ],
   mkdirMode: 0777 & (~process.umask()),
   app: undefined,
@@ -215,6 +218,70 @@ function createResource(callback){
   callback(null, 'createFiles');
 };
 
+function replaceNames(callback){
+
+  var lowerName = program.resource.toLowerCase(),
+      properName = program.resource.toProperCase();
+
+  var paths = [
+    path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
+    path.join(currentDir, '/data/models/' + lowerName + '.js'),
+    path.join(currentDir, '/api/resources/' + lowerName)
+  ];
+
+  var forReplace = [
+    { from: 'resource', to: lowerName },
+    { from: 'resource_id', to: lowerName + '_id' },
+    { from: 'Resource', to: properName }
+  ];
+
+  forReplace.forEach(function(replacement){
+    var from = replacement.from,
+        to = replacement.to;
+    replace({
+      regex: from,
+      replacement: to,
+      paths: paths,
+      recursive: true,
+      silent: true,
+    });
+  });
+
+  callback();
+}
+
+function upgradeSchema(callback){
+
+  var lowerName = program.resource.toLowerCase();
+
+  var targetPath = path.join(currentDir, '/data/schemas/' + lowerName + '.js');
+
+  var fields = program.args,
+      code = [''];
+
+  for (var i = 0; i < fields.length; i++) {
+    code.push('  ' + fields[i]  + ',');
+  };
+
+  code = code.join(eol);
+
+  console.log(code);
+
+  var args = {
+    regex: '\/\/FIELDS PLACEHOLDER',
+    replacement: code,
+    paths: [targetPath],
+    recursive: false,
+    silent: true,
+  };
+
+  console.log(args);
+
+  replace(args);
+
+  callback();
+};
+
 function testExistence(callback){
   async.each(sourceDirs, function(dir, callback){
 
@@ -260,8 +327,8 @@ function refactor(callback){
                 ];
 
   async.series([
-        replaceNames
-      , injectBlocks
+        // replaceNames
+        injectBlocks
       , renameFile
 
     ], function(err, result) { 
@@ -269,32 +336,32 @@ function refactor(callback){
       callback(null, 'refactor OK');
     });
 
-  function replaceNames(callback) {
-    async.each(targets, function(dir, callback){
-      async.series([
-        function(callback){
-          var args = ['#{Item}', program.resource.toProperCase(), dir];
-          child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-            if (err) { abort(new Error(stderr)); }
-            callback && callback();
-          });
-        },
-        function(callback){
-          var args = ['#{item}', program.resource.toLowerCase(), dir];
-          child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-            if (err) { abort(new Error(stderr)); }
-            callback && callback();
-          });
-        }], function(err, result){
-          if (err) { callback(err); }
-          callback && callback();
-        })
-    },
-    function(err){
-      if (err) { callback(err); }
-      callback && callback();
-    });
-  };
+  // function replaceNames(callback) {
+  //   async.each(targets, function(dir, callback){
+  //     async.series([
+  //       function(callback){
+  //         var args = ['#{Item}', program.resource.toProperCase(), dir];
+  //         child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+  //           if (err) { abort(new Error(stderr)); }
+  //           callback && callback();
+  //         });
+  //       },
+  //       function(callback){
+  //         var args = ['#{item}', program.resource.toLowerCase(), dir];
+  //         child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
+  //           if (err) { abort(new Error(stderr)); }
+  //           callback && callback();
+  //         });
+  //       }], function(err, result){
+  //         if (err) { callback(err); }
+  //         callback && callback();
+  //       })
+  //   },
+  //   function(err){
+  //     if (err) { callback(err); }
+  //     callback && callback();
+  //   });
+  // };
 
   function injectBlocks(callback) {
     var targetPath = './data/schemas/item.js';
