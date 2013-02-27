@@ -121,9 +121,10 @@ function createCommonFiles(callback) {
     '/data/schemas/user.js',
     '/data/schemas/consumer.js',
     '/api/index.js',
-    '/api/auth/same.js',
     '/api/auth/user.js',
     '/api/auth/consumer.js',
+    '/api/auth/same.js',
+    '/api/auth/owner.js',
     '/api/resources/user/crud/index.js',
     '/api/resources/user/crud/list.js',
     '/api/resources/user/crud/create.js',
@@ -257,11 +258,14 @@ function upgradeSchema(callback){
   var targetPath = path.join(currentDir, '/data/schemas/' + lowerName + '.js');
 
   var fields = program.args,
-      code = [''];
+      code = [];
+
+  var leftSpace = '  ';
 
   for (var i = 0; i < fields.length; i++) {
-    code.push('  ' + fields[i]  + ',');
+    code.push(leftSpace + fields[i]  + ',');
   };
+  code[0] = code[0].slice(leftSpace.length);
 
   code = code.join(eol);
 
@@ -280,122 +284,6 @@ function upgradeSchema(callback){
   replace(args);
 
   callback();
-};
-
-function testExistence(callback){
-  async.each(sourceDirs, function(dir, callback){
-
-    var target = path.join(currentDir, dir);
-    fs.exists(target, function(exists){
-      storage.exists[dir] = exists;
-      callback && callback();
-    });
-  },
-  function(err){
-    if (err) { callback(err) };
-    callback(null, 'existence OK');
-  });
-};
-
-function copy(callback){
-  async.each(sourceDirs, function(dir, callback){
-    var source = path.join(templateDir, dir),
-        target = path.join(currentDir, dir);
-
-    var exists = storage.exists[dir];
-
-    if (!exists){
-      console.log('not exists', dir);
-      wrench.copyDirSyncRecursive(source, target);
-    }
-    callback && callback();
-  },
-  function(err){
-    if (err) { callback(err); }
-    callback(null, 'copy OK');
-  });
-};
-
-function refactor(callback){
-  var replacePath = path.join(__dirname, '../node_modules/replace/bin/replace.js'),
-      ItemSchemaPath = './data/schemas/item.js',
-      ItemModelPath = './data/models/item.js',
-      targets = [
-                  ItemSchemaPath,
-                  ItemModelPath,
-                  './api/auth/owner.js'
-                ];
-
-  async.series([
-        // replaceNames
-        injectBlocks
-      , renameFile
-
-    ], function(err, result) { 
-      if (err) { callback(err); }
-      callback(null, 'refactor OK');
-    });
-
-  // function replaceNames(callback) {
-  //   async.each(targets, function(dir, callback){
-  //     async.series([
-  //       function(callback){
-  //         var args = ['#{Item}', program.resource.toProperCase(), dir];
-  //         child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-  //           if (err) { abort(new Error(stderr)); }
-  //           callback && callback();
-  //         });
-  //       },
-  //       function(callback){
-  //         var args = ['#{item}', program.resource.toLowerCase(), dir];
-  //         child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-  //           if (err) { abort(new Error(stderr)); }
-  //           callback && callback();
-  //         });
-  //       }], function(err, result){
-  //         if (err) { callback(err); }
-  //         callback && callback();
-  //       })
-  //   },
-  //   function(err){
-  //     if (err) { callback(err); }
-  //     callback && callback();
-  //   });
-  // };
-
-  function injectBlocks(callback) {
-    var targetPath = './data/schemas/item.js';
-
-    var fields = program.args,
-        fieldsCode = [''];
-
-    for (var i = 0; i < fields.length; i++) {
-      fieldsCode.push('  ' + fields[i]  + ',');
-    };
-
-    var args = ['//FIELDS PLACEHOLDER', fieldsCode.join(eol), targetPath];
-    child_process.execFile(replacePath, args, { cwd: currentDir }, function(err, stdout, stderr){
-      if (err) { abort(new Error(stderr)); }
-      callback && callback();
-    });
-  };
-
-  function renameFile(callback) {
-    async.parallel([
-        function(callback){
-          fs.rename(ItemSchemaPath, ItemSchemaPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
-            callback && callback();
-          });
-        },
-        function(callback){
-          fs.rename(ItemModelPath, ItemModelPath.replace('/item', '/' + program.resource.toLowerCase()), function(){
-            callback && callback();
-          });
-        }
-      ], function(err, results){
-      callback && callback();
-    });
-  };
 };
 
 /**
