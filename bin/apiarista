@@ -253,23 +253,17 @@ function replaceNames(callback){
 
 function upgradeSchema(callback){
 
-  var lowerName = program.resource.toLowerCase();
-
-  var targetPath = path.join(currentDir, '/data/schemas/' + lowerName + '.js');
-
-  var fields = program.args,
-      code = [];
-
-  var leftSpace = '  ';
+  var lowerName = program.resource.toLowerCase(),
+      targetPath = path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
+      fields = program.args,
+      code = [],
+      leftSpace = '  ';
 
   for (var i = 0; i < fields.length; i++) {
     code.push(leftSpace + fields[i]  + ',');
   };
   code[0] = code[0].slice(leftSpace.length);
-
   code = code.join(eol);
-
-  console.log(code);
 
   var args = {
     regex: '\/\/FIELDS PLACEHOLDER',
@@ -278,11 +272,8 @@ function upgradeSchema(callback){
     recursive: false,
     silent: true,
   };
-
-  console.log(args);
-
+  
   replace(args);
-
   callback();
 };
 
