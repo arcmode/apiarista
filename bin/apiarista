@@ -17,7 +17,9 @@ program
   .version(require('../package').version)
   .option('-i, install', 'install base api')
   .option('-r, resource [ResourceName]', 'generate resource')
-  .option('-f, force', 'force resource creation')
+  .option('-o, --owned', 'set an owner field for the resource')
+  .option('-t, --timestamp', 'add timestamp field to resource')
+  .option('-f, --force', 'force resource creation')
   .parse(process.argv);
 
 // end-of-line code
@@ -55,11 +57,6 @@ var data = {
   created: []
 }
 
-// for (key in data.methods){
-//   var value = data.methods[key];
-//   data.pipeline.push(value);
-// };
-
 var install = program.install,
     resource = program.resource;
 
@@ -74,6 +71,9 @@ if (resource && typeof resource === 'string') {
   data.pipeline.push(data.methods.createResource);
   data.pipeline.push(data.methods.replaceNames);
   data.pipeline.push(data.methods.upgradeSchema);
+} else {
+
+  abort('    you  must specify a name')
 }
 
 // operate in series
@@ -90,6 +90,12 @@ async.series(data.pipeline, function(err, results){
 
   console.log('    END');
 });
+
+/**
+ * Test process.cwd() is a Node.js application.
+ *
+ * Abort unless api.js or server.js are founded (not recursive).
+ */
 
 function testApp(callback){
   fs.exists(path.join(currentDir, '/app.js'), function(exists){
@@ -111,6 +117,12 @@ function testApp(callback){
     }
   });
 };
+
+/**
+ * Create base dirs.
+ *
+ * Create data, api and subdirs.
+ */
 
 function createCommonDirs(callback) {
   var dirs = [
@@ -139,6 +151,12 @@ function createCommonDirs(callback) {
   });
   callback(null, 'createDirs');
 };
+
+/**
+ * Create base files.
+ *
+ * Create api middlewares and user and consumer resources including schema, model and crud.
+ */
 
 function createCommonFiles(callback) {
   var files = [
@@ -176,6 +194,12 @@ function createCommonFiles(callback) {
   callback(null, 'createFiles');
 }
 
+/**
+ * Check existence of resource files.
+ *
+ * Aborts when one of the paths exists.
+ */
+
 function checkResourceExistence(callback){
   var resourceName = program.resource,
       paths = [
@@ -201,6 +225,11 @@ function checkResourceExistence(callback){
   });
   callback(null, '    checkResourceExistence')
 }
+
+/**
+ * Create schema, model and crud for resource.
+ *
+ */
 
 function createResource(callback){
   var resourceName = program.resource,
@@ -243,6 +272,11 @@ function createResource(callback){
   callback(null, 'createFiles');
 };
 
+/**
+ * Replace the default resource name with 'program.resource.toProperCase()'.
+ *
+ */
+
 function replaceNames(callback){
 
   var lowerName = program.resource.toLowerCase(),
@@ -254,7 +288,9 @@ function replaceNames(callback){
     path.join(currentDir, '/api/resources/' + lowerName)
   ];
 
+  // add a pluralize() function to the member named 'resources'
   var forReplace = [
+    { from: 'resources', to: lowerName + 's' },
     { from: 'resource', to: lowerName },
     { from: 'resource_id', to: lowerName + '_id' },
     { from: 'Resource', to: properName }
@@ -275,6 +311,13 @@ function replaceNames(callback){
   callback();
 }
 
+/**
+ * Upgrade the generated Schema.
+ *
+ * Add fields from program options data.
+ *
+ */
+
 function upgradeSchema(callback){
 
   var lowerName = program.resource.toLowerCase(),
@@ -283,10 +326,24 @@ function upgradeSchema(callback){
       code = [],
       leftSpace = '  ';
 
+  if (program.owned) {
+    code.push(leftSpace + ', ' + 'user: { type: Schema.ObjectId, ref: \'User\' }');
+    code.push('');
+  }
+
   for (var i = 0; i < fields.length; i++) {
-    code.push(leftSpace + fields[i]  + ',');
+    code.push(leftSpace + ', ' + fields[i]);
   };
-  code[0] = code[0].slice(leftSpace.length);
+
+  if (program.timestamp) {
+    code.push(leftSpace + ', ' + 'date: { type: Date, default: Date.now() }');
+    code.push('');
+  }
+
+  if (code.length) {
+    code[0] = ' ' + code[0].slice(3);
+  }
+
   code = code.join(eol);
 
   var args = {
@@ -302,6 +359,8 @@ function upgradeSchema(callback){
 };
 
 /**
+ * Borrowed from '/express/bin'.
+ *
  * Exit with the given `str`.
  *
  * @param {String} str
