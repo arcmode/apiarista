@@ -71,6 +71,7 @@ var data = {
       testApp: testApp
     , createCommonDirs: createCommonDirs
     , createCommonFiles: createCommonFiles
+    , replaceConfig: replaceConfig
     , checkResourceExistence: checkResourceExistence
     , createResource: createResource
     , replaceNames: replaceNames
@@ -94,6 +95,7 @@ if (install) {
   data.pipeline.push(
                       data.methods.createCommonDirs,
                       data.methods.createCommonFiles,
+                      data.methods.replaceConfig,
                       data.methods.updateDependencies
                     );
 
@@ -101,7 +103,8 @@ if (install) {
 
   data.pipeline.push(
                       data.methods.createCommonDirs,
-                      data.methods.createCommonFiles
+                      data.methods.createCommonFiles,
+                      data.methods.replaceConfig,
                     );
 
   if (!program.force) { data.pipeline.push(data.methods.checkResourceExistence); }
@@ -266,6 +269,24 @@ function createCommonFiles(callback) {
 }
 
 /**
+ * Replace config files.
+ *
+ * Only db name by now.
+ */
+
+function replaceConfig(callback){
+
+  // replace db connection name
+  replace({
+    regex: 'apiarista-template',
+    replacement: path.basename(currentDir),
+    paths: [path.join(currentDir, '/data/config')],
+    recursive: true,
+    silent: true
+  });
+}
+
+/**
  * Check existence of resource files.
  *
  * Aborts when one of the paths exists.
@@ -375,15 +396,6 @@ function replaceNames(callback){
       recursive: true,
       silent: true
     });
-  });
-
-  // replace db connection name
-  replace({
-    regex: 'apiarista-template',
-    replacement: path.basename(currentDir),
-    paths: [path.join(currentDir, '/data/config')],
-    recursive: true,
-    silent: true
   });
 
   callback(null , 'replaceNames');
