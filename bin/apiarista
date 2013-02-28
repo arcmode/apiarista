@@ -314,6 +314,7 @@ function replaceNames(callback){
   var lowerName = program.resource.toLowerCase(),
       properName = program.resource.toProperCase();
 
+  // resource paths
   var paths = [
     path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
     path.join(currentDir, '/data/models/' + lowerName + '.js'),
@@ -329,6 +330,7 @@ function replaceNames(callback){
     { from: 'Resource', to: properName }
   ];
 
+  // replace resource name
   forReplace.forEach(function(replacement){
     var from = replacement.from,
         to = replacement.to;
@@ -337,8 +339,17 @@ function replaceNames(callback){
       replacement: to,
       paths: paths,
       recursive: true,
-      silent: true,
+      silent: true
     });
+  });
+
+  // replace db connection name
+  replace({
+    regex: 'apiarista-template',
+    replacement: path.basename(currentDir),
+    paths: [path.join(currentDir, '/data/config/db.js')],
+    recursive: false,
+    silent: true
   });
 
   callback(null , 'replaceNames');
