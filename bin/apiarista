@@ -52,8 +52,8 @@ String.prototype.toProperCase = function () {
 // names
 
 var resourceName = program.resource,
-    lowerName = program.resource.toLowerCase(),
-    properName = program.resource.toProperCase();
+    lowerName = resourceName && resourceName.toLowerCase(),
+    properName = resourceName && resourceName.toProperCase();
 
 // end-of-line code
 

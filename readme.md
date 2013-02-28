@@ -73,7 +73,7 @@ I recommend to use the `-o` and `-t` flags when a resource need to be owned and 
 
 ### Start consuming the API
 
-	$ curl -X POST "http://localhost:3000/consumers"
+	$ curl -X POST "http://127.0.0.1:3000/consumers"
 
 ------------
 
