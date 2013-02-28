@@ -496,14 +496,23 @@ function updateDependencies(callback){
       originPkgPath = path.join(templateDir, '/package.json'),
       originPkg = require(originPkgPath);
 
+  // load target pkg
   var merge = targetPkg;
 
+  // dont merge irrelevant dependencies
+  var exclude = {
+    "jade": "*",
+    "stylus": "*"
+  };
+
+  // add origin dependencies
   for (var key in originPkg.dependencies){
-    if (!merge.dependencies.hasOwnProperty(key)) {
+    if (!merge.dependencies.hasOwnProperty(key) && !(key in exclude)) {
       merge.dependencies[key] = originPkg.dependencies[key];
     }
   }
 
+  // write updated pkg
   fs.writeFileSync(targetPkgPath, JSON.stringify(merge, null, 4));
 
   callback(null, 'updateDependencies');
