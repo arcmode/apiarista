@@ -60,7 +60,7 @@ I recommend to use the `-o` and `-t` flags when a resource need to be owned and 
 
 ### Dependencies
 
-[apiarista-template](http://github.com/drojas/apiarista-template/) depends on [Express](http://expressjs.com/) `v3.1.0`, [Mongoose](http://mongoosejs.com/) `v3.5.7` and [token.js](http://github.com/flesch/token.js/) `v0.0.1.`
+[apiarista-template](http://github.com/drojas/apiarista-template/) depends on [Express](http://expressjs.com/) `v3.1.0`, [Mongoose](http://mongoosejs.com/) `v3.5.7` and [token.js](http://github.com/flesch/token.js/) `v0.0.1.
 
 `apiarista` will add that dependencies to your `package.json` if not present so after the generation process you probably should do 
 
@@ -74,7 +74,7 @@ I recommend to use the `-o` and `-t` flags when a resource need to be owned and 
 
 ### Start consuming the API
 
-	$ curl -X POST "http:localhost:3000/consumers"
+	$ curl -X POST "http://localhost:3000/consumers"
 
 ------------
 
