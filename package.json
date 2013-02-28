@@ -19,7 +19,7 @@
     "rest",
     "restful"
   ],
-  "repository": "git://github.com/drojas/apiarist",
+  "repository": "git://github.com/drojas/apiarista",
   "bin": {
     "apiarista": "./bin/apiarista"
   },
