@@ -1,11 +1,11 @@
 apiarista
 =========
 
-*See also [apiarista-template][3].*
+*See also [apiarista-template](http://github.github.com/drojas/apiarista-template/).*
 
-`apiarista` is a CLI tool to use along with [Node.js][1] and [Express][2].
+`apiarista` is a CLI tool to use along with [Node.js](http://nodejs.org/) and [Express](http://expressjs.com/).
 
-It purpose is to take an [app template][3] and use it as a source for API structure and API resources generation.
+It purpose is to take an [app template](http://github.github.com/drojas/apiarista-template/) and use it as a source for API structure and API resources generation.
 
 ###Installation
 
@@ -13,7 +13,7 @@ It purpose is to take an [app template][3] and use it as a source for API struct
 
 ###Usage
 
-`apiarista` asumes an [Express][2] app
+`apiarista` asumes an [Express](http://expressjs.com/) app
 
 	$ express myapp
 	$ cd myapp
@@ -74,8 +74,3 @@ I recommend to use the `-o` and `-t` flags when a resource need to be owned and 
      jgs   (`-=-=-=-=-`)
             `-=-=-=-=-`
 </pre>
-
-
-  [1]: http://nodejs.org/        							"Node.js"
-  [2]: http://expressjs.com/  								"Express.js"
-  [3]: http://github.github.com/drojas/apiarista-template/	"apiarista-template"
