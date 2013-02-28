@@ -68,8 +68,7 @@ I recommend to use the `-o` and `-t` flags when a resource need to be owned and 
 
 ### Finally
 
-	$ echo "" >> app.js
-	$ echo "require('./api')(app);" >> app.js
+	$ echo -e "\nrequire('./api')(app);" >> app.js
 	$ node app.js
 
 ### Start consuming the API
