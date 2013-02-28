@@ -1,11 +1,11 @@
 apiarista
 =========
 
-*See also [apiarista-template](http://github.github.com/drojas/apiarista-template/).*
+*See also [apiarista-template](http://github.com/drojas/apiarista-template/).*
 
 `apiarista` is a CLI tool to use along with [Node.js](http://nodejs.org/) and [Express](http://expressjs.com/).
 
-It purpose is to take an [app template](http://github.github.com/drojas/apiarista-template/) and use it as a source for API structure and API resources generation.
+It purpose is to take an [app template](http://github.com/drojas/apiarista-template/) and use it as a source for API structure and API resources generation.
 
 ###Installation
 
