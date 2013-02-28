@@ -7,7 +7,7 @@
     "commander": "0.6.1",
     "async": "0.2.5",
     "wrench": "1.4.4",
-    "api-template": "git://github.com/drojas/api-template.git#master"
+    "apiarista-template": "git://github.com/drojas/apiarista-template.git#master"
 
   },
   "keywords": [

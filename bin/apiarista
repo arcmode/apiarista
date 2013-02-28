@@ -304,6 +304,7 @@ function replaceNames(callback){
   // add a pluralize() function to the member named 'resources'
   var forReplace = [
     { from: 'resources', to: lowerName + 's' },
+    { from: 'Resources', to: properName + 's' },
     { from: 'resource', to: lowerName },
     { from: 'resource_id', to: lowerName + '_id' },
     { from: 'Resource', to: properName }
