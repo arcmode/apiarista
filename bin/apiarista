@@ -43,15 +43,21 @@ program.parse(process.argv);
 var install = program.install,
     resource = program.resource;
 
-// end-of-line code
-
-var eol = 'win32' == os.platform() ? '\r\n' : '\n';
-
 // utility to propercase the resource name
 
 String.prototype.toProperCase = function () {
     return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 };
+
+// names
+
+var resourceName = program.resource,
+    lowerName = program.resource.toLowerCase(),
+    properName = program.resource.toProperCase();
+
+// end-of-line code
+
+var eol = 'win32' == os.platform() ? '\r\n' : '\n';
 
 // dirs to operate
 
@@ -69,6 +75,7 @@ var data = {
     , createResource: createResource
     , replaceNames: replaceNames
     , upgradeSchema: upgradeSchema
+    , replaceConditionals: replaceConditionals
     , upgradeApiIndex: upgradeApiIndex
     , updateDependencies: updateDependencies
   },
@@ -103,6 +110,7 @@ if (install) {
                       data.methods.createResource,
                       data.methods.replaceNames,
                       data.methods.upgradeSchema,
+                      data.methods.replaceConditionals,
                       data.methods.upgradeApiIndex,
                       data.methods.updateDependencies
                     );
@@ -248,7 +256,6 @@ function createCommonFiles(callback) {
  */
 
 function checkResourceExistence(callback){
-  var resourceName = program.resource,
       paths = [
         '/data/schemas/' + resourceName + '.js',
         '/data/models/' + resourceName + '.js',
@@ -279,7 +286,6 @@ function checkResourceExistence(callback){
  */
 
 function createResource(callback){
-  var resourceName = program.resource,
       paths = function(name){
         var defaultName = 'resource';
         resource = (name && name.toLowerCase()) || defaultName;
@@ -325,9 +331,6 @@ function createResource(callback){
  */
 
 function replaceNames(callback){
-
-  var lowerName = program.resource.toLowerCase(),
-      properName = program.resource.toProperCase();
 
   // resource paths
   var paths = [
@@ -379,25 +382,14 @@ function replaceNames(callback){
 
 function upgradeSchema(callback){
 
-  var lowerName = program.resource.toLowerCase(),
-      targetPath = path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
+  var targetPath = path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
       fields = program.args,
       code = [],
       leftSpace = '  ';
 
-  if (program.owned) {
-    code.push(leftSpace + ', ' + 'user: { type: Schema.ObjectId, ref: \'User\' }');
-    code.push('');
-  }
-
   for (var i = 0; i < fields.length; i++) {
     code.push(leftSpace + ', ' + fields[i]);
   };
-
-  if (program.timestamp) {
-    code.push(leftSpace + ', ' + 'date: { type: Date, default: Date.now }');
-    code.push('');
-  }
 
   if (code.length) {
     code[0] = ' ' + code[0].slice(3);
@@ -405,7 +397,7 @@ function upgradeSchema(callback){
 
   code = code.join(eol);
 
-  var args = {
+  var argsFields = {
     regex: '\/\/FIELDS PLACEHOLDER',
     replacement: code,
     paths: [targetPath],
@@ -413,8 +405,54 @@ function upgradeSchema(callback){
     silent: true,
   };
 
-  replace(args);
+  replace(argsFields);
   callback(null, 'upgradeSchema');
+};
+
+/**
+ * Replace conditional code.
+ *
+ * If program.owned then //IF-OWNED is removed
+ *
+ */
+
+function replaceConditionals(callback){
+
+  // --owner -o, --timestamp -t
+  var owned = program.owned,
+      timestamp = program.timestamp;
+
+  // relevant paths
+  var paths = [
+    path.join(currentDir, '/data/schemas'),
+    path.join(currentDir, '/api/resources/' + lowerName)
+  ];
+
+  // remove //IF-OWNED
+  if (owned) {
+    var argsOwner = {
+      regex: '\/\/IF-OWNED ',
+      replacement: '',
+      paths: paths,
+      recursive: true,
+      silent: true,
+    };
+    replace(argsOwner);
+  }
+
+  // remove //IF-TIMESTAMP
+  if (timestamp) {
+    var argsOwner = {
+      regex: '\/\/IF-TIMESTAMP ',
+      replacement: '',
+      paths: paths,
+      recursive: true,
+      silent: true,
+    };
+    replace(argsOwner);
+  }
+
+  callback(null, 'replaceConditionals');
 };
 
 /**
@@ -425,19 +463,13 @@ function upgradeSchema(callback){
  */
 
 function upgradeApiIndex(callback){
-  var lowerName = program.resource.toLowerCase(),
-      targetPath = path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
-      fields = program.args,
+  var targetPath = path.join(currentDir, '/api/index.js'),
       code = [],
       leftSpace = '  ';
 
   code.push('//CRUDs PLACEHOLDER');
   code.push('');
-  code.push(leftSpace + 'require(\'resources/' + lowerName + '/crud' + '\')(app);');
-
-  // if (code.length) {
-  //   code[0] = ' ' + code[0].slice(3);
-  // }
+  code.push(leftSpace + 'require(\'./resources/' + lowerName  + '\')(app);');
 
   code = code.join(eol);
 
