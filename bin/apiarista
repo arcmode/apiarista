@@ -355,7 +355,7 @@ function upgradeSchema(callback){
   };
 
   if (program.timestamp) {
-    code.push(leftSpace + ', ' + 'date: { type: Date, default: Date.now() }');
+    code.push(leftSpace + ', ' + 'date: { type: Date, default: Date.now }');
     code.push('');
   }
 
