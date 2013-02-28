@@ -547,7 +547,6 @@ function updateDependencies(callback){
   callback(null, 'updateDependencies');
 };
 
-
 // inspired by '../node_modules/express/bin/express'.
 
 /**
