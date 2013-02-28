@@ -121,20 +121,36 @@ if (install) {
 
 // operate in series
 
+console.log();
+
 async.series(data.pipeline, function(err, results){
 
   if (err) { abort(err); }
 
   console.log();
 
-  console.log(results);
+  // inspired by '../node_modules/express/bin/express'.
+
+  console.log('   plug the API:');
+  console.log('     $ echo -e "\\nrequire(\'./api\')(app);" >> app.js');
+
+  console.log();
+
+  console.log('   install dependencies:');
+  console.log('     $ npm install');
+
+  console.log();
+
+  console.log('   run the app:');
+  console.log('     $ node app');
 
   if (program.debug) {
 
-    console.log('    DEBUG    ');
-
+    console.log('   Results:');
     console.log();
-
+    console.log(results);
+    console.log('   DEBUG:');
+    console.log();
     console.log(data);
   }
   console.log();
@@ -196,7 +212,7 @@ function createCommonDirs(callback) {
       data.present.push(dirPath);
     } else {
       data.absent.push(dirPath);
-      fs.mkdirSync(dirPath, data.mkdirMode);
+      mkdirSync(dirPath, data.mkdirMode);
       data.created.push(dirPath);
     }
   });
@@ -242,7 +258,7 @@ function createCommonFiles(callback) {
       var templateFilePath = path.join(templateDir, file),
           templateFileContent = fs.readFileSync(templateFilePath);
       data.absent.push(filePath)
-      fs.writeFileSync(filePath, templateFileContent, 'utf8');
+      writeFileSync(filePath, templateFileContent, 'utf8');
       data.created.push(filePath)
     }
   });
@@ -313,11 +329,11 @@ function createResource(callback){
       data.absent.push(targetRealPath)
       var ext = path.extname(targetRealPath);
       if (ext !== '.js') {
-        fs.mkdirSync(targetRealPath, data.mkdirMode);
+        mkdirSync(targetRealPath, data.mkdirMode);
       } else {
         var originRealPath = path.join(templateDir, paths()[index]),
           templateFileContent = fs.readFileSync(originRealPath);
-        fs.writeFileSync(targetRealPath, templateFileContent, 'utf8');
+        writeFileSync(targetRealPath, templateFileContent, 'utf8');
       }
       data.created.push(targetRealPath)
     }
@@ -513,13 +529,39 @@ function updateDependencies(callback){
   }
 
   // write updated pkg
-  fs.writeFileSync(targetPkgPath, JSON.stringify(merge, null, 4));
+  writeFileSync(targetPkgPath, JSON.stringify(merge, null, 4), 'utf8', 'updated');
 
   callback(null, 'updateDependencies');
 };
 
+
+// inspired by '../node_modules/express/bin/express'.
+
 /**
- * Borrowed from '/express/bin'.
+ * echo str > path.
+ *
+ * @param {String} path
+ * @param {String} str
+ */
+
+function writeFileSync(path, str, encoding, message) {
+  fs.writeFileSync(path, str);
+  console.log('   \x1b[36m%s\x1b[0m : ' + path, message || 'create');
+}
+
+/**
+ * mkdirSync
+ *
+ * @param {String} path
+ * @param {Number} mode
+ */
+
+function mkdirSync(path, mode) {
+  fs.mkdirSync(path, mode);
+  console.log('   \033[36mcreate\033[0m : ' + path);
+}
+
+/**
  *
  * Exit with the given `str`.
  *
@@ -528,7 +570,7 @@ function updateDependencies(callback){
 
 function abort(str) {
   console.log();
-  console.error('    ' + str);
+  console.error('   ' + str);
   console.log();
   process.exit(1);
 }
