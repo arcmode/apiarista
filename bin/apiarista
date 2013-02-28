@@ -104,7 +104,7 @@ if (install) {
   data.pipeline.push(
                       data.methods.createCommonDirs,
                       data.methods.createCommonFiles,
-                      data.methods.replaceConfig,
+                      data.methods.replaceConfig
                     );
 
   if (!program.force) { data.pipeline.push(data.methods.checkResourceExistence); }
