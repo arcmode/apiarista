@@ -54,7 +54,7 @@ So, the following generates the same Schema:
 	$ apiarista -r Poll "title: String" "ballots: []" "user: { type: Schema.ObjectId, ref: 'User' }"
 	"date: { type: Date, default: Date.now }"
 
-**IMPORTANT** `apiarista` also uses the `-o` flag to add ownership verification middleware to the PUT and DELETE operations.
+**IMPORTANT** `apiarista` also uses the `-o` flag to add ownership verification middleware to PUT and DELETE operations.
 
 I recommend to use the `-o` and `-t` flags when a resource need to be owned and timestamped.
 
