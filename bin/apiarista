@@ -54,6 +54,7 @@ var data = {
     , createResource: createResource
     , replaceNames: replaceNames
     , upgradeSchema: upgradeSchema
+    , upgradeApiIndex: upgradeApiIndex
   },
   pipeline: [testApp],
   mkdirMode: 0777 & (~process.umask()),
@@ -76,6 +77,7 @@ if (install) {
   data.pipeline.push(data.methods.createResource);
   data.pipeline.push(data.methods.replaceNames);
   data.pipeline.push(data.methods.upgradeSchema);
+  data.pipeline.push(data.methods.upgradeApiIndex);
 } else {
 
   abort('    you  must specify a name')
@@ -362,6 +364,43 @@ function upgradeSchema(callback){
 
   var args = {
     regex: '\/\/FIELDS PLACEHOLDER',
+    replacement: code,
+    paths: [targetPath],
+    recursive: false,
+    silent: true,
+  };
+
+  replace(args);
+  callback(null, 'upgradeSchema');
+};
+
+/**
+ * Upgrade api/index.js routes.
+ *
+ * Add resource to api index for routing.
+ *
+ */
+
+function upgradeApiIndex(callback){
+
+  var lowerName = program.resource.toLowerCase(),
+      targetPath = path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
+      fields = program.args,
+      code = [],
+      leftSpace = '  ';
+
+  code.push('//CRUDs PLACEHOLDER');
+  code.push('');
+  code.push(leftSpace + 'require(\'resources/' + lowerName + '/crud' + '\')(app);');
+
+  // if (code.length) {
+  //   code[0] = ' ' + code[0].slice(3);
+  // }
+
+  code = code.join(eol);
+
+  var args = {
+    regex: '\/\/CRUDs PLACEHOLDER',
     replacement: code,
     paths: [targetPath],
     recursive: false,
