@@ -381,8 +381,8 @@ function replaceNames(callback){
   replace({
     regex: 'apiarista-template',
     replacement: path.basename(currentDir),
-    paths: [path.join(currentDir, '/data/config/db.js')],
-    recursive: false,
+    paths: [path.join(currentDir, '/data/config')],
+    recursive: true,
     silent: true
   });
 
