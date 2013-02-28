@@ -78,16 +78,16 @@ if (install) {
 } else if (resource && typeof resource === 'string') {
 
   data.pipeline.push(
-                      data.methods.createCommonDirs),
+                      data.methods.createCommonDirs,
                       data.methods.createCommonFiles
                     );
 
   if (!program.force) { data.pipeline.push(data.methods.checkResourceExistence); }
 
   data.pipeline.push(
-                      data.methods.createResource),
-                      data.methods.replaceNames),
-                      data.methods.upgradeSchema),
+                      data.methods.createResource,
+                      data.methods.replaceNames,
+                      data.methods.upgradeSchema,
                       data.methods.upgradeApiIndex),
                       data.methods.updateDependencies
                     );
