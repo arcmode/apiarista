@@ -414,9 +414,7 @@ function upgradeApiIndex(callback){
 };
 
 /**
- * Upgrade api/index.js routes.
- *
- * Add resource to api index for routing.
+ * Update app dependencies with apiarist-template dependencies.
  *
  */
 
