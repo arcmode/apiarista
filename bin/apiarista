@@ -425,22 +425,15 @@ function updateDependencies(callback){
       originPkgPath = path.join(templateDir, '/package.json'),
       originPkg = require(originPkgPath);
 
-  var merge = {},
-      mergedPkg = targetPkg;
+  var merge = targetPkg;
 
   for (var key in originPkg.dependencies){
-    merge[key] = originPkg.dependencies[key];
-  }
-
-  for (var key in targetPkg.dependencies){
-    if (!merge.hasOwnProperty(key)) {
-      merge[key] = originPkg.dependencies[key];
+    if (!merge.dependencies.hasOwnProperty(key)) {
+      merge.dependencies[key] = originPkg.dependencies[key];
     }
   }
 
-  mergedPkg.dependencies = merge;
-
-  fs.writeFileSync(targetPkgPath, JSON.stringify(mergedPkg, null, 4));
+  fs.writeFileSync(targetPkgPath, JSON.stringify(merge, null, 4));
 
   callback(null, 'updateDependencies');
 };
