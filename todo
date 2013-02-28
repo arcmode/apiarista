@@ -17,9 +17,9 @@
 
 	api resource blog name:String     |or|    api resource blog "name : { type: String }" active:Boolean
 
-	// resource as a relationship
+	// declare a manyToMany relationship as an resource
 
-	api resource has "user : { type: ObjectId, ref: 'User' }" "blog : { type: ObjectId, ref: 'Blog' }"
+	api Has "blog : { type: ObjectId, ref: 'Blog' }"
 
 	// shorcut for relationships
 
