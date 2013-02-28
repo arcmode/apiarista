@@ -15,7 +15,9 @@ var program = require('commander'),
 
 program
   .version(require('../package').version)
+  .option('-i, install', 'install base api')
   .option('-r, resource [ResourceName]', 'generate resource')
+  .option('-f, force', 'force resource creation')
   .parse(process.argv);
 
 // end-of-line code
@@ -36,20 +38,42 @@ var templateDir = path.join(__dirname, '../node_modules/api-template'),
 // data used during operations
 
 var data = {
-  pipeline: [
-      testApp
-    , createCommonDirs
-    , createCommonFiles
-    , checkResourceExistence
-    , createResource
-    , replaceNames
-    , upgradeSchema
-  ],
+  methods: {
+      testApp: testApp
+    , createCommonDirs: createCommonDirs
+    , createCommonFiles: createCommonFiles
+    , checkResourceExistence: checkResourceExistence
+    , createResource: createResource
+    , replaceNames: replaceNames
+    , upgradeSchema: upgradeSchema
+  },
+  pipeline: [testApp],
   mkdirMode: 0777 & (~process.umask()),
   app: undefined,
   absent: [],
   present: [],
   created: []
+}
+
+// for (key in data.methods){
+//   var value = data.methods[key];
+//   data.pipeline.push(value);
+// };
+
+var install = program.install,
+    resource = program.resource;
+
+if (install || resource) {
+  data.pipeline.push(data.methods.createCommonDirs);
+  data.pipeline.push(data.methods.createCommonFiles);
+
+}
+
+if (resource && typeof resource === 'string') {
+  if (!program.force) { data.pipeline.push(data.methods.checkResourceExistence); }
+  data.pipeline.push(data.methods.createResource);
+  data.pipeline.push(data.methods.replaceNames);
+  data.pipeline.push(data.methods.upgradeSchema);
 }
 
 // operate in series
@@ -272,7 +296,7 @@ function upgradeSchema(callback){
     recursive: false,
     silent: true,
   };
-  
+
   replace(args);
   callback();
 };
