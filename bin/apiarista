@@ -429,9 +429,7 @@ function updateDependencies(callback){
       mergedPkg = targetPkg;
 
   for (var key in originPkg.dependencies){
-    if (!merge.hasOwnProperty(key)) {
-      merge[key] = originPkg.dependencies[key];
-    }
+    merge[key] = originPkg.dependencies[key];
   }
 
   for (var key in targetPkg.dependencies){
