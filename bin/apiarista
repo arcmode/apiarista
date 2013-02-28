@@ -55,6 +55,7 @@ var data = {
     , replaceNames: replaceNames
     , upgradeSchema: upgradeSchema
     , upgradeApiIndex: upgradeApiIndex
+    , updateDependencies: updateDependencies
   },
   pipeline: [testApp],
   mkdirMode: 0777 & (~process.umask()),
@@ -78,6 +79,7 @@ if (install) {
   data.pipeline.push(data.methods.replaceNames);
   data.pipeline.push(data.methods.upgradeSchema);
   data.pipeline.push(data.methods.upgradeApiIndex);
+  data.pipeline.push(data.methods.updateDependencies);
 } else {
 
   abort('    you  must specify a name')
@@ -382,7 +384,6 @@ function upgradeSchema(callback){
  */
 
 function upgradeApiIndex(callback){
-
   var lowerName = program.resource.toLowerCase(),
       targetPath = path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
       fields = program.args,
@@ -408,7 +409,42 @@ function upgradeApiIndex(callback){
   };
 
   replace(args);
-  callback(null, 'upgradeSchema');
+  callback(null, 'upgradeApiIndex');
+};
+
+/**
+ * Upgrade api/index.js routes.
+ *
+ * Add resource to api index for routing.
+ *
+ */
+
+function updateDependencies(callback){
+  var targetPkgPath = path.join(currentDir, '/package.json'),
+      targetPkg = require(targetPkgPath),
+      originPkgPath = path.join(templateDir, '/package.json'),
+      originPkg = require(originPkgPath);
+
+  var merge = {},
+      mergedPkg = targetPkg;
+
+  for (var key in originPkg.dependencies){
+    if (!merge.hasOwnProperty(key)) {
+      merge[key] = originPkg.dependencies[key];
+    }
+  }
+
+  for (var key in targetPkg.dependencies){
+    if (!merge.hasOwnProperty(key)) {
+      merge[key] = originPkg.dependencies[key];
+    }
+  }
+
+  mergedPkg.dependencies = merge;
+
+  fs.writeFileSync(targetPkgPath, JSON.stringify(mergedPkg, null, 4));
+
+  callback(null, 'updateDependencies');
 };
 
 /**

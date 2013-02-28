@@ -2,4 +2,5 @@
 .DS_Store
 bin/data
 bin/api
+bin/package.json
 bin/app.js
