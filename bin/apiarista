@@ -162,6 +162,8 @@ function createCommonFiles(callback) {
   var files = [
     '/data/schemas/user.js',
     '/data/schemas/consumer.js',
+    '/data/models/user.js',
+    '/data/models/consumer.js',
     '/api/index.js',
     '/api/auth/user.js',
     '/api/auth/consumer.js',
