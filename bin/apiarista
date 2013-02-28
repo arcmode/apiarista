@@ -284,6 +284,7 @@ function replaceConfig(callback){
     recursive: true,
     silent: true
   });
+  callback(null, 'replaceConfig');
 }
 
 /**
