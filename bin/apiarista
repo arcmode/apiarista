@@ -13,6 +13,8 @@ var program = require('commander'),
     child_process = require('child_process'),
     replace = require('replace');
 
+// CLI
+
 program
   .version(require('../package').version)
   .option('-i, install', 'install base api')
@@ -20,7 +22,11 @@ program
   .option('-o, --owned', 'set an owner field for the resource')
   .option('-t, --timestamp', 'add timestamp field to resource')
   .option('-f, --force', 'force resource creation')
+  .option('-d, --debug', 'debug mode')
   .parse(process.argv);
+
+var install = program.install,
+    resource = program.resource;
 
 // end-of-line code
 
@@ -57,16 +63,15 @@ var data = {
   created: []
 }
 
-var install = program.install,
-    resource = program.resource;
+// build pipeline
 
-if (install || resource) {
+if (install) {
   data.pipeline.push(data.methods.createCommonDirs);
   data.pipeline.push(data.methods.createCommonFiles);
 
-}
-
-if (resource && typeof resource === 'string') {
+} else if (resource && typeof resource === 'string') {
+  data.pipeline.push(data.methods.createCommonDirs);
+  data.pipeline.push(data.methods.createCommonFiles);
   if (!program.force) { data.pipeline.push(data.methods.checkResourceExistence); }
   data.pipeline.push(data.methods.createResource);
   data.pipeline.push(data.methods.replaceNames);
@@ -84,11 +89,17 @@ async.series(data.pipeline, function(err, results){
 
   console.log();
 
-  console.log(data);
+  console.log(results);
 
+  if (program.debug) {
+
+    console.log('    DEBUG    ');
+
+    console.log();
+
+    console.log(data);
+  }
   console.log();
-
-  console.log('    END');
 });
 
 /**
@@ -102,13 +113,13 @@ function testApp(callback){
     if (exists) {
       data.app = '/app.js';
       data.present.push(data.app);
-      callback();
+      callback(null, data.app);
     } else {
       fs.exists(path.join(currentDir, '/server.js'), function(exists){
         if (exists) {
           data.app = '/server.js';
           data.present.push(data.app);
-          callback();
+          callback(null, data.app);
         } else {
           data.absent.push(data.app);
           abort('    app/server not found')
@@ -149,7 +160,7 @@ function createCommonDirs(callback) {
       data.created.push(dirPath);
     }
   });
-  callback(null, 'createDirs');
+  callback(null, 'createCommonDirs');
 };
 
 /**
@@ -193,7 +204,7 @@ function createCommonFiles(callback) {
       data.created.push(filePath)
     }
   });
-  callback(null, 'createFiles');
+  callback(null, 'createCommonFiles');
 }
 
 /**
@@ -225,7 +236,7 @@ function checkResourceExistence(callback){
       data.absent.push(realPath);
     }
   });
-  callback(null, '    checkResourceExistence')
+  callback(null, 'checkResourceExistence')
 }
 
 /**
@@ -271,7 +282,7 @@ function createResource(callback){
       data.created.push(targetRealPath)
     }
   });
-  callback(null, 'createFiles');
+  callback(null, 'createResource');
 };
 
 /**
@@ -310,7 +321,7 @@ function replaceNames(callback){
     });
   });
 
-  callback();
+  callback(null , 'replaceNames');
 }
 
 /**
@@ -357,7 +368,7 @@ function upgradeSchema(callback){
   };
 
   replace(args);
-  callback();
+  callback(null, 'upgradeSchema');
 };
 
 /**
@@ -374,17 +385,3 @@ function abort(str) {
   console.log();
   process.exit(1);
 }
-
-function flushSystem(callback){
-    async.each(sourceDirs, function(dir, callback){
-      if (storage.exists[dir]) {
-        var target = path.join(currentDir, dir);
-        wrench.rmdirSyncRecursive(target);
-        console.log('     FLUSHED:     ' + target);
-      }
-    },
-    function(err){
-      if (err) { callback(err); }
-      callback && callback(null, 'flush OK');
-    });
-};
