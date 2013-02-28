@@ -40,7 +40,7 @@ String.prototype.toProperCase = function () {
 
 // dirs to operate
 
-var templateDir = path.join(__dirname, '../node_modules/api-template'),
+var templateDir = path.join(__dirname, '../node_modules/apiarista-template'),
     currentDir = process.cwd();
 
 // data used during operations
