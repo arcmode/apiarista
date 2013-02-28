@@ -21,7 +21,7 @@
   ],
   "repository": "git://github.com/drojas/apiarist",
   "bin": {
-    "apiarist": "./bin/apiarist"
+    "apiarista": "./bin/apiarista"
   },
   "engines": {
     "node": "*"
