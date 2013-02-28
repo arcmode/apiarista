@@ -33,7 +33,7 @@ Now you can use `apiarista` to plug a generic API to your project
 		 -r, resource [ResourceName]  generate resource
 		 -o, --owned                  set an owner field for the resource
 		 -t, --timestamp              add timestamp field to resource
-		 -f, --force                  force resource creation
+		 -f, --force                  disable abort on path exists
 		 -d, --debug                  debug mode
 
 	 Examples:

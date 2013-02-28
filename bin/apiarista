@@ -21,7 +21,7 @@ program
   .option('-r, resource [ResourceName]', 'generate resource')
   .option('-o, --owned', 'set an owner field for the resource')
   .option('-t, --timestamp', 'add timestamp field to resource')
-  .option('-f, --force', 'force resource creation')
+  .option('-f, --force', 'disable abort on path exists')
   .option('-d, --debug', 'debug mode');
 
 // custom help
