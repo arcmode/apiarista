@@ -22,8 +22,23 @@ program
   .option('-o, --owned', 'set an owner field for the resource')
   .option('-t, --timestamp', 'add timestamp field to resource')
   .option('-f, --force', 'force resource creation')
-  .option('-d, --debug', 'debug mode')
-  .parse(process.argv);
+  .option('-d, --debug', 'debug mode');
+
+// custom help
+
+program.on('--help', function(){
+  console.log('  Examples:');
+  console.log('');
+  console.log('    $ apiarista init');
+  console.log('    $ apiarista resource blog name:String');
+  console.log('    $ apiarista resource Blog "name : { type: String }"');
+  console.log('    $ apiarista resource Has "blog : { type: ObjectId, ref: \'Blog\' }" --owned --timestamp');
+  console.log('');
+});
+
+// parse arguments
+
+program.parse(process.argv);
 
 var install = program.install,
     resource = program.resource;
