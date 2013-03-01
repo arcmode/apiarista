@@ -49,7 +49,7 @@ String.prototype.toProperCase = function () {
 
 // names
 
-var resourceName = program.resource;,
+var resourceName = program.resource,
     lowerName = resourceName && resourceName.toLowerCase(),
     properName = resourceName && resourceName.toProperCase(),
     defaultResourceName = 'resource',
@@ -297,7 +297,6 @@ function checkResourceExistence(callback){
         '/routes/resources/' + lowerName + '/crud',
         '/routes/resources/' + lowerName + '/crud/list.js',
         '/routes/resources/' + lowerName + '/crud/create.js',
-        '/routes/resources/' + lowerName + '/crud/read.js',
         '/routes/resources/' + lowerName + '/crud/update.js',
         '/routes/resources/' + lowerName + '/crud/delete.js'
       ];
@@ -331,7 +330,6 @@ function createResource(callback){
           '/routes/resources/' + name + '/crud',
           '/routes/resources/' + name + '/crud/list.js',
           '/routes/resources/' + name + '/crud/create.js',
-          '/routes/resources/' + name + '/crud/read.js',
           '/routes/resources/' + name + '/crud/update.js',
           '/routes/resources/' + name + '/crud/delete.js'
         ];
@@ -462,10 +460,10 @@ function replaceConditionals(callback){
     var conditional = { 
       name: flag,
       flag: program[flag],
-      ifRegex: '\/\/IF-' + flag.toUpperCase() + ' ',
+      ifRegex: '\/\/IF_' + flag.toUpperCase() + ' ',
       ifReplacement: '',
-      templateRegexLower: template(flag),
-      templateRegexProper: template(flag.toProperCase())
+      templateRegexLower: templateName(flag),
+      templateRegexProper: templateName(flag.toProperCase())
     };
     ifConditionals.push(conditional);
   });
@@ -483,9 +481,10 @@ function replaceConditionals(callback){
         silent: true
       });
       // replace $flag
+      var defName = defaults[conditional.name];
       replace({
         regex: conditional.templateRegexLower,
-        replacement: (typeof flag === 'string' ? flag.toLowerCase() : defaults[conditional.name].toLowerCase()),
+        replacement: (typeof flag === 'string' ? flag.toLowerCase() : defName && defName.toLowerCase()),
         paths: paths,
         recursive: false,
         silent: true
@@ -493,7 +492,7 @@ function replaceConditionals(callback){
       // replace $Flag
       replace({
         regex: conditional.templateRegexProper,
-        replacement: (typeof flag === 'string' ? flag.toProperCase() : defaults[conditional.name].toProperCase()),
+        replacement: (typeof flag === 'string' ? flag.toProperCase() : defName && defName.toProperCase()),
         paths: paths,
         recursive: false,
         silent: true
