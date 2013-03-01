@@ -431,7 +431,7 @@ function upgradeSchema(callback){
 
   var argsFields = {
     regex: '\/\/FIELDS PLACEHOLDER',
-    replacement: code,
+    replacement: code.length ? code : undefined,
     paths: [targetPath],
     recursive: false,
     silent: true,
