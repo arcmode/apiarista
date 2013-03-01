@@ -490,7 +490,7 @@ function replaceConditionals(callback){
         recursive: false,
         silent: true
       });
-      // replace // $Flag
+      // replace $Flag
       replace({
         regex: conditional.templateRegexProper,
         replacement: (typeof flag === 'string' ? flag.toProperCase() : defaults[conditional.name].toProperCase()),
