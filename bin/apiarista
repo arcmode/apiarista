@@ -19,7 +19,7 @@ program
   .version(require('../package').version)
   .option('-i, install', 'install base api')
   .option('-r, resource [ResourceName]', 'generate resource')
-  .option('-o, --owner', 'set an owner field for the resource')
+  .option('-o, --owner [OwnerName]', 'set an owner field for the resource')
   .option('-a, --auth', 'authenticate the resource')
   .option('-t, --timestamp', 'add timestamp field to resource')
   .option('-f, --force', 'disable abort on path exists')
@@ -368,17 +368,27 @@ function replaceNames(callback){
   var paths = [
     path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
     path.join(currentDir, '/data/models/' + lowerName + '.js'),
-    path.join(currentDir, '/routes/resources/' + lowerName)
+    path.join(currentDir, '/routes/resources/' + lowerName + '/index.js')
   ];
 
   // add a pluralize() function to the member named 'resources'
   var forReplace = [
+
     // plural
-    { from: templateName(pluralize(defaultLowerName)), to: pluralize(lowerName) },
-    { from: templateName(pluralize(defaultProperName)), to: pluralize(properName) },
+
+    // lowercase
+    { from: '\\' + templateName(pluralize(defaultLowerName)), to: pluralize(lowerName) },
+
+    // propercase
+    { from: '\\' + templateName(pluralize(defaultProperName)), to: pluralize(properName) },
+
     // singular
-    { from: templateName(defaultLowerName), to: lowerName },
-    { from: templateName(defaultProperName), to: properName }
+
+    // lowercase
+    { from: '\\' + templateName(defaultLowerName), to: lowerName },
+
+    // propercase
+    { from: '\\' + templateName(defaultProperName), to: properName }
   ];
 
   // replace resource name
@@ -389,7 +399,7 @@ function replaceNames(callback){
       regex: from,
       replacement: to,
       paths: paths,
-      recursive: true,
+      recursive: false,
       silent: true
     });
   });
@@ -462,8 +472,8 @@ function replaceConditionals(callback){
       flag: program[flag],
       ifRegex: '\/\/IF_' + flag.toUpperCase() + ' ',
       ifReplacement: '',
-      templateRegexLower: templateName(flag),
-      templateRegexProper: templateName(flag.toProperCase())
+      templateRegexLower: '\\' + templateName(flag),
+      templateRegexProper: '\\' + templateName(flag.toProperCase())
     };
     ifConditionals.push(conditional);
   });
