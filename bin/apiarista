@@ -457,7 +457,7 @@ function replaceConditionals(callback){
   // defaults
   defaults = { owner: 'user' };
 
-  // remove all //IF-FLAG
+  // generate data for replacement
   flags.forEach(function(flag, index) {
     var conditional = { 
       name: flag,
@@ -474,6 +474,7 @@ function replaceConditionals(callback){
   ifConditionals.forEach(function(conditional, index) {
     var flag = conditional.flag;
     if (flag) {
+      // remove all //IF-FLAG
       replace({
         regex: conditional.ifRegex,
         replacement: conditional.ifReplacement,
@@ -481,9 +482,18 @@ function replaceConditionals(callback){
         recursive: false,
         silent: true
       });
+      // replace $flag
       replace({
         regex: conditional.templateRegexLower,
-        replacement: (typeof flag === 'string' ? flag : defaults[conditional.name]),
+        replacement: (typeof flag === 'string' ? flag.toLowerCase() : defaults[conditional.name].toLowerCase()),
+        paths: paths,
+        recursive: false,
+        silent: true
+      });
+      // replace // $Flag
+      replace({
+        regex: conditional.templateRegexProper,
+        replacement: (typeof flag === 'string' ? flag.toProperCase() : defaults[conditional.name].toProperCase()),
         paths: paths,
         recursive: false,
         silent: true
