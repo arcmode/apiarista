@@ -199,13 +199,13 @@ function createCommonDirs(callback) {
     '/data/models',
     '/data/config',
     '/data/utils',
-    '/api',
-    '/api/auth',
-    '/api/resources',
-    '/api/resources/consumer',
-    '/api/resources/consumer/crud',
-    '/api/resources/user',
-    '/api/resources/user/crud'
+    '/routes',
+    '/routes/auth',
+    '/routes/resources',
+    '/routes/resources/consumer',
+    '/routes/resources/consumer/crud',
+    '/routes/resources/user',
+    '/routes/resources/user/crud'
   ];
 
   dirs.forEach(function(dir){
@@ -236,20 +236,20 @@ function createCommonFiles(callback) {
     '/data/models/consumer.js',
     '/data/config/db.js',
     '/data/utils/tokenize.js',
-    '/api/index.js',
-    '/api/auth/user.js',
-    '/api/auth/consumer.js',
-    '/api/auth/same.js',
-    '/api/auth/owner.js',
-    '/api/resources/user/index.js',
-    '/api/resources/user/crud/list.js',
-    '/api/resources/user/crud/create.js',
-    '/api/resources/user/crud/read.js',
-    '/api/resources/user/crud/update.js',
-    '/api/resources/user/crud/delete.js',
-    '/api/resources/consumer/index.js',
-    '/api/resources/consumer/crud/create.js',
-    '/api/resources/consumer/crud/delete.js'
+    '/routes/index.js',
+    '/routes/auth/user.js',
+    '/routes/auth/consumer.js',
+    '/routes/auth/same.js',
+    '/routes/auth/owner.js',
+    '/routes/resources/user/index.js',
+    '/routes/resources/user/crud/list.js',
+    '/routes/resources/user/crud/create.js',
+    '/routes/resources/user/crud/read.js',
+    '/routes/resources/user/crud/update.js',
+    '/routes/resources/user/crud/delete.js',
+    '/routes/resources/consumer/index.js',
+    '/routes/resources/consumer/crud/create.js',
+    '/routes/resources/consumer/crud/delete.js'
   ];
 
   files.forEach(function(file){
@@ -297,12 +297,12 @@ function checkResourceExistence(callback){
       paths = [
         '/data/schemas/' + resourceName + '.js',
         '/data/models/' + resourceName + '.js',
-        '/api/resources/' + resourceName + '/index.js',
-        '/api/resources/' + resourceName + '/crud/list.js',
-        '/api/resources/' + resourceName + '/crud/create.js',
-        '/api/resources/' + resourceName + '/crud/read.js',
-        '/api/resources/' + resourceName + '/crud/update.js',
-        '/api/resources/' + resourceName + '/crud/delete.js'
+        '/routes/resources/' + resourceName + '/index.js',
+        '/routes/resources/' + resourceName + '/crud/list.js',
+        '/routes/resources/' + resourceName + '/crud/create.js',
+        '/routes/resources/' + resourceName + '/crud/read.js',
+        '/routes/resources/' + resourceName + '/crud/update.js',
+        '/routes/resources/' + resourceName + '/crud/delete.js'
       ];
 
   paths.forEach(function(_path){
@@ -330,14 +330,14 @@ function createResource(callback){
         var p = [
           '/data/schemas/' + resource + '.js',
           '/data/models/' + resource + '.js',
-          '/api/resources/' + resource,
-          '/api/resources/' + resource + '/index.js',
-          '/api/resources/' + resource + '/crud',
-          '/api/resources/' + resource + '/crud/list.js',
-          '/api/resources/' + resource + '/crud/create.js',
-          '/api/resources/' + resource + '/crud/read.js',
-          '/api/resources/' + resource + '/crud/update.js',
-          '/api/resources/' + resource + '/crud/delete.js'
+          '/routes/resources/' + resource,
+          '/routes/resources/' + resource + '/index.js',
+          '/routes/resources/' + resource + '/crud',
+          '/routes/resources/' + resource + '/crud/list.js',
+          '/routes/resources/' + resource + '/crud/create.js',
+          '/routes/resources/' + resource + '/crud/read.js',
+          '/routes/resources/' + resource + '/crud/update.js',
+          '/routes/resources/' + resource + '/crud/delete.js'
         ];
         return p;
       }
@@ -374,7 +374,7 @@ function replaceNames(callback){
   var paths = [
     path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
     path.join(currentDir, '/data/models/' + lowerName + '.js'),
-    path.join(currentDir, '/api/resources/' + lowerName)
+    path.join(currentDir, '/routes/resources/' + lowerName)
   ];
 
   // add a pluralize() function to the member named 'resources'
@@ -454,7 +454,7 @@ function replaceConditionals(callback){
   // relevant paths
   var paths = [
     path.join(currentDir, '/data/schemas'),
-    path.join(currentDir, '/api/resources/' + lowerName)
+    path.join(currentDir, '/routes/resources/' + lowerName)
   ];
 
   // remove //IF-OWNED
@@ -492,7 +492,7 @@ function replaceConditionals(callback){
  */
 
 function upgradeApiIndex(callback){
-  var targetPath = path.join(currentDir, '/api/index.js'),
+  var targetPath = path.join(currentDir, '/routes/index.js'),
       code = [],
       leftSpace = '  ';
 

@@ -1,30 +1,9 @@
--- get generator
+-- add command to create admin consumer configuration
 
-		apiarista init
-			-> create base with User Consumer
-		apiarista generate
-			-> create a resource named 'Resource'
-		apiarista generate [ResourceName]
-			-> generate a resource with custom name [ResourceName]
+	- create consumer and get :id and secret
 
--- rename project to apiarista-template? (and api folder to apiarista? (and apiarista's bin file to api?) )
+	- create /data/config/consumers.js
 
--- commands to be used
-	
-	npm install apiarista
+-- deal with throttle
 
-	// basic usage
-
-	api resource blog name:String     |or|    api resource blog "name : { type: String }" active:Boolean
-
-	// declare a manyToMany relationship as an resource
-
-	api Has "blog : { type: ObjectId, ref: 'Blog' }"
-
-	// shorcut for relationships
-
-	api relationsip user has blog
-
-	// shortcuts for schema constructor
-
-	api resource job position:required:unique description:null
+-- take db name from pkg instead of basename(process.cwd())
