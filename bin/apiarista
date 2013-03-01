@@ -21,7 +21,6 @@ program
   .option('-r, resource [ResourceName]', 'generate resource (default: "resource")')
   .option('-o, --owner [OwnerName]', 'define an owner (default: "user")')
   .option('-a, --auth', 'authenticate the resource')
-  .option('-t, --timestamp', 'add timestamp field to resource')
   .option('-f, --force', 'disable abort on path exists')
   .option('-d, --debug', 'output debug data');
 
@@ -30,9 +29,9 @@ program
 program.on('--help', function(){
   console.log('  Example:');
   console.log('');
-  console.log('    $ apiarista resource consumer --auth --timestamp');
-  console.log('    $ apiarista -r user -a --owner consumer -t');
-  console.log('    $ apiarista -r blog "title: { String, required: true }" -o user -t');
+  console.log('    $ apiarista resource consumer --auth');
+  console.log('    $ apiarista -r user -a --owner consumer');
+  console.log('    $ apiarista -r blog "title: { String, required: true }" -o user');
   console.log('');
 });
 
@@ -458,7 +457,7 @@ function replaceConditionals(callback){
   ];
 
   // program flags
-  var flags = [ 'owner', 'auth', 'timestamp' ],
+  var flags = [ 'owner', 'auth' ],
       ifConditionals = [];
 
   // defaults

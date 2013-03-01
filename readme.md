@@ -35,15 +35,14 @@ Now you can use `apiarista` to plug a generic API to your project
        -r, resource [ResourceName]  generate resource (default: "resource")
        -o, --owner [OwnerName]      define an owner (default: "user")
        -a, --auth                   authenticate the resource
-       -t, --timestamp              add timestamp field to resource
        -f, --force                  disable abort on path exists
        -d, --debug                  output debug data
 
      Example:
 
-       $ apiarista resource consumer --auth --timestamp
-       $ apiarista -r user -a --owner consumer -t
-       $ apiarista -r blog "title: { String, required: true }" -o user -t
+       $ apiarista resource consumer --auth
+       $ apiarista -r user -a --owner consumer
+       $ apiarista -r blog "title: { String, required: true }" -o user
 
 ### Example
 
