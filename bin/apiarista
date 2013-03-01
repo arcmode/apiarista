@@ -57,7 +57,7 @@ var defaultResourceName = 'resource',
     projectName = path.basename(currentDir);
 
 function templateName(name) {
-  return ('$' + name);
+  return ('\\$' + name);
 }
 
 function pluralize(name) {
@@ -376,18 +376,18 @@ function replaceNames(callback){
     // plural
 
     // lowercase
-    { from: '\\' + templateName(pluralize(defaultLowerName)), to: pluralize(lowerName) },
+    { from: templateName(pluralize(defaultLowerName)), to: pluralize(lowerName) },
 
     // propercase
-    { from: '\\' + templateName(pluralize(defaultProperName)), to: pluralize(properName) },
+    { from: templateName(pluralize(defaultProperName)), to: pluralize(properName) },
 
     // singular
 
     // lowercase
-    { from: '\\' + templateName(defaultLowerName), to: lowerName },
+    { from: templateName(defaultLowerName), to: lowerName },
 
     // propercase
-    { from: '\\' + templateName(defaultProperName), to: properName }
+    { from: templateName(defaultProperName), to: properName }
   ];
 
   // replace resource name
@@ -471,8 +471,8 @@ function replaceConditionals(callback){
       flag: program[flag],
       ifRegex: '\/\/IF_' + flag.toUpperCase() + ' ',
       ifReplacement: '',
-      templateRegexLower: '\\' + templateName(flag),
-      templateRegexProper: '\\' + templateName(flag.toProperCase())
+      templateRegexLower: templateName(flag),
+      templateRegexProper: templateName(flag.toProperCase())
     };
     ifConditionals.push(conditional);
   });
