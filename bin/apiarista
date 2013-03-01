@@ -242,7 +242,8 @@ function createCommonFiles(callback) {
     '/api/middleware/load.js',
     '/api/middleware/auth.js',
     '/api/middleware/same.js',
-    '/api/middleware/ownership.js'
+    '/api/middleware/ownership.js',
+    '/api/middleware/send.js',
   ];
 
   files.forEach(function(file){
