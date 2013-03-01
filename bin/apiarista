@@ -239,6 +239,7 @@ function createCommonFiles(callback) {
     '/data/config/auto.js',
     '/data/utils/tokenize.js',
     '/api/index.js',
+    '/api/middleware/attr.js',
     '/api/middleware/load.js',
     '/api/middleware/auth.js',
     '/api/middleware/same.js',
