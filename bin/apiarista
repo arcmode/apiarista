@@ -424,7 +424,7 @@ function upgradeSchema(callback){
   };
 
   if (code.length) {
-    code[0] = ' ' + code[0].slice(3);
+    code[0] = code[0].slice(leftSpace.length);
   }
 
   code = code.join(eol);
