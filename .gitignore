@@ -1,6 +1,6 @@
 node_modules/
 bin/data
-bin/api
+bin/routes
 bin/package.json
 bin/app.js
 .DS_Store

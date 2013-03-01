@@ -40,9 +40,6 @@ program.on('--help', function(){
 
 program.parse(process.argv);
 
-var install = program.install,
-    resource = program.resource;
-
 // utility to propercase the resource name
 
 String.prototype.toProperCase = function () {
@@ -66,8 +63,7 @@ var templateDir = path.join(__dirname, '../node_modules/apiarista-template'),
 
 // data used during operations
 
-var data = {
-  methods: {
+var methods = {
       testApp: testApp
     , createCommonDirs: createCommonDirs
     , createCommonFiles: createCommonFiles
@@ -79,7 +75,9 @@ var data = {
     , replaceConditionals: replaceConditionals
     , upgradeApiIndex: upgradeApiIndex
     , updateDependencies: updateDependencies
-  },
+  };
+
+var data = {
   pipeline: [testApp],
   mkdirMode: 0777 & (~process.umask()),
   app: undefined,
@@ -90,32 +88,32 @@ var data = {
 
 // build pipeline
 
-if (install) {
+if (program.install) {
 
   data.pipeline.push(
-                      data.methods.createCommonDirs,
-                      data.methods.createCommonFiles,
-                      data.methods.replaceConfig,
-                      data.methods.updateDependencies
+                      methods.createCommonDirs,
+                      methods.createCommonFiles,
+                      methods.replaceConfig,
+                      methods.updateDependencies
                     );
 
-} else if (resource && typeof resource === 'string') {
+} else if (program.resource && typeof program.resource === 'string') {
 
   data.pipeline.push(
-                      data.methods.createCommonDirs,
-                      data.methods.createCommonFiles,
-                      data.methods.replaceConfig
+                      methods.createCommonDirs,
+                      methods.createCommonFiles,
+                      methods.replaceConfig
                     );
 
-  if (!program.force) { data.pipeline.push(data.methods.checkResourceExistence); }
+  if (!program.force) { data.pipeline.push(methods.checkResourceExistence); }
 
   data.pipeline.push(
-                      data.methods.createResource,
-                      data.methods.replaceNames,
-                      data.methods.upgradeSchema,
-                      data.methods.replaceConditionals,
-                      data.methods.upgradeApiIndex,
-                      data.methods.updateDependencies
+                      methods.createResource,
+                      methods.replaceNames,
+                      methods.upgradeSchema,
+                      methods.replaceConditionals,
+                      methods.upgradeApiIndex,
+                      methods.updateDependencies
                     );
 } else {
 
