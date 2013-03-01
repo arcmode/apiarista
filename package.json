@@ -7,7 +7,7 @@
     "commander": "0.6.1",
     "async": "0.2.5",
     "wrench": "1.4.4",
-    "assert-plus": "0.1,2",
+    "assert-plus": "0.1.2",
     "replace": "0.2.2",
     "apiarista-template": "git://github.com/drojas/apiarista-template.git#master"
 
