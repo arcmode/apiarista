@@ -10,8 +10,8 @@ var program = require('commander'),
     path = require('path'),
     os = require('os'),
     fs = require('fs'),
-    child_process = require('child_process'),
-    replace = require('replace');
+    replace = require('replace'),
+    assert = require('assert-plus');
 
 // CLI
 
@@ -19,7 +19,8 @@ program
   .version(require('../package').version)
   .option('-i, install', 'install base api')
   .option('-r, resource [ResourceName]', 'generate resource')
-  .option('-o, --owned', 'set an owner field for the resource')
+  .option('-o, --owner', 'set an owner field for the resource')
+  .option('-a, --auth', 'authenticate the resource')
   .option('-t, --timestamp', 'add timestamp field to resource')
   .option('-f, --force', 'disable abort on path exists')
   .option('-d, --debug', 'debug mode');
@@ -48,9 +49,21 @@ String.prototype.toProperCase = function () {
 
 // names
 
-var resourceName = program.resource.toLowerCase(),
-    lowerName = resourceName,
-    properName = resourceName && resourceName.toProperCase();
+var resourceName = program.resource;,
+    lowerName = resourceName && resourceName.toLowerCase(),
+    properName = resourceName && resourceName.toProperCase(),
+    defaultResourceName = 'resource',
+    defaultLowerName = defaultResourceName.toLowerCase(),
+    defaultProperName = defaultResourceName.toProperCase(),
+    projectName = path.basename(currentDir);
+
+function templateName(name) {
+  return ('$' + name);
+}
+
+function pluralize(name) {
+  return (name + 's');
+}
 
 // end-of-line code
 
@@ -198,12 +211,8 @@ function createCommonDirs(callback) {
     '/data/config',
     '/data/utils',
     '/routes',
-    '/routes/auth',
-    '/routes/resources',
-    '/routes/resources/consumer',
-    '/routes/resources/consumer/crud',
-    '/routes/resources/user',
-    '/routes/resources/user/crud'
+    '/routes/middleware',
+    '/routes/resources'
   ];
 
   dirs.forEach(function(dir){
@@ -228,27 +237,14 @@ function createCommonDirs(callback) {
 
 function createCommonFiles(callback) {
   var files = [
-    '/data/schemas/user.js',
-    '/data/schemas/consumer.js',
-    '/data/models/user.js',
-    '/data/models/consumer.js',
     '/data/config/db.js',
     '/data/config/auto.js',
     '/data/utils/tokenize.js',
     '/routes/index.js',
-    '/routes/auth/user.js',
-    '/routes/auth/consumer.js',
-    '/routes/auth/same.js',
-    '/routes/auth/owner.js',
-    '/routes/resources/user/index.js',
-    '/routes/resources/user/crud/list.js',
-    '/routes/resources/user/crud/create.js',
-    '/routes/resources/user/crud/read.js',
-    '/routes/resources/user/crud/update.js',
-    '/routes/resources/user/crud/delete.js',
-    '/routes/resources/consumer/index.js',
-    '/routes/resources/consumer/crud/create.js',
-    '/routes/resources/consumer/crud/delete.js'
+    '/routes/middleware/load.js',
+    '/routes/middleware/auth.js',
+    '/routes/middleware/same.js',
+    '/routes/middleware/ownership.js'
   ];
 
   files.forEach(function(file){
@@ -277,8 +273,8 @@ function replaceConfig(callback){
 
   // replace db connection name
   replace({
-    regex: 'apiarista-template',
-    replacement: path.basename(currentDir),
+    regex: templateName('apiarista-template'),
+    replacement: projectName,
     paths: [path.join(currentDir, '/data/config')],
     recursive: true,
     silent: true
@@ -294,14 +290,16 @@ function replaceConfig(callback){
 
 function checkResourceExistence(callback){
       paths = [
-        '/data/schemas/' + resourceName + '.js',
-        '/data/models/' + resourceName + '.js',
-        '/routes/resources/' + resourceName + '/index.js',
-        '/routes/resources/' + resourceName + '/crud/list.js',
-        '/routes/resources/' + resourceName + '/crud/create.js',
-        '/routes/resources/' + resourceName + '/crud/read.js',
-        '/routes/resources/' + resourceName + '/crud/update.js',
-        '/routes/resources/' + resourceName + '/crud/delete.js'
+        '/data/schemas/' + lowerName + '.js',
+        '/data/models/' + lowerName + '.js',
+        '/routes/resources/' + lowerName,
+        '/routes/resources/' + lowerName + '/index.js',
+        '/routes/resources/' + lowerName + '/crud',
+        '/routes/resources/' + lowerName + '/crud/list.js',
+        '/routes/resources/' + lowerName + '/crud/create.js',
+        '/routes/resources/' + lowerName + '/crud/read.js',
+        '/routes/resources/' + lowerName + '/crud/update.js',
+        '/routes/resources/' + lowerName + '/crud/delete.js'
       ];
 
   paths.forEach(function(_path){
@@ -324,24 +322,23 @@ function checkResourceExistence(callback){
 
 function createResource(callback){
       paths = function(name){
-        var defaultName = 'resource';
-        resource = (name && name.toLowerCase()) || defaultName;
+        name = name || defaultLowerName;
         var p = [
-          '/data/schemas/' + resource + '.js',
-          '/data/models/' + resource + '.js',
-          '/routes/resources/' + resource,
-          '/routes/resources/' + resource + '/index.js',
-          '/routes/resources/' + resource + '/crud',
-          '/routes/resources/' + resource + '/crud/list.js',
-          '/routes/resources/' + resource + '/crud/create.js',
-          '/routes/resources/' + resource + '/crud/read.js',
-          '/routes/resources/' + resource + '/crud/update.js',
-          '/routes/resources/' + resource + '/crud/delete.js'
+          '/data/schemas/' + name + '.js',
+          '/data/models/' + name + '.js',
+          '/routes/resources/' + name,
+          '/routes/resources/' + name + '/index.js',
+          '/routes/resources/' + name + '/crud',
+          '/routes/resources/' + name + '/crud/list.js',
+          '/routes/resources/' + name + '/crud/create.js',
+          '/routes/resources/' + name + '/crud/read.js',
+          '/routes/resources/' + name + '/crud/update.js',
+          '/routes/resources/' + name + '/crud/delete.js'
         ];
         return p;
       }
 
-  paths(resourceName).forEach(function(resourcePath, index){
+  paths(lowerName).forEach(function(resourcePath, index){
     var targetRealPath = path.join(currentDir, resourcePath),
         exists = fs.existsSync(targetRealPath);
     if (exists) {
@@ -378,11 +375,12 @@ function replaceNames(callback){
 
   // add a pluralize() function to the member named 'resources'
   var forReplace = [
-    { from: 'resources', to: lowerName + 's' },
-    { from: 'Resources', to: properName + 's' },
-    { from: 'resource', to: lowerName },
-    { from: 'resource_id', to: lowerName + '_id' },
-    { from: 'Resource', to: properName }
+    // plural
+    { from: templateName(pluralize(defaultLowerName)), to: pluralize(lowerName) },
+    { from: templateName(pluralize(defaultProperName)), to: pluralize(properName) },
+    // singular
+    { from: templateName(defaultLowerName), to: lowerName },
+    { from: templateName(defaultProperName), to: properName }
   ];
 
   // replace resource name
@@ -446,39 +444,52 @@ function upgradeSchema(callback){
 
 function replaceConditionals(callback){
 
-  // --owner -o, --timestamp -t
-  var owned = program.owned,
-      timestamp = program.timestamp;
-
   // relevant paths
   var paths = [
-    path.join(currentDir, '/data/schemas'),
-    path.join(currentDir, '/routes/resources/' + lowerName)
+    path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
+    path.join(currentDir, '/routes/resources/' + lowerName + '/index.js')
   ];
 
-  // remove //IF-OWNED
-  if (owned) {
-    var argsOwner = {
-      regex: '\/\/IF-OWNED ',
-      replacement: '',
-      paths: paths,
-      recursive: true,
-      silent: true,
-    };
-    replace(argsOwner);
-  }
+  // program flags
+  var flags = [ 'owner', 'auth', 'timestamp' ],
+      ifConditionals = [];
 
-  // remove //IF-TIMESTAMP
-  if (timestamp) {
-    var argsOwner = {
-      regex: '\/\/IF-TIMESTAMP ',
-      replacement: '',
-      paths: paths,
-      recursive: true,
-      silent: true,
+  // defaults
+  defaults = { owner: 'user' };
+
+  // remove all //IF-FLAG
+  flags.forEach(function(flag, index) {
+    var conditional = { 
+      name: flag,
+      flag: program[flag],
+      ifRegex: '\/\/IF-' + flag.toUpperCase() + ' ',
+      ifReplacement: '',
+      templateRegexLower: template(flag),
+      templateRegexProper: template(flag.toProperCase())
     };
-    replace(argsOwner);
-  }
+    ifConditionals.push(conditional);
+  });
+
+  // Replace templated conditionals like $owner
+  ifConditionals.forEach(function(conditional, index) {
+    var flag = conditional.flag;
+    if (flag) {
+      replace({
+        regex: conditional.ifRegex,
+        replacement: conditional.ifReplacement,
+        paths: paths,
+        recursive: false,
+        silent: true
+      });
+      replace({
+        regex: conditional.templateRegexLower,
+        replacement: (typeof flag === 'string' ? flag : defaults[conditional.name]),
+        paths: paths,
+        recursive: false,
+        silent: true
+      });
+    };
+  });
 
   callback(null, 'replaceConditionals');
 };
