@@ -48,8 +48,8 @@ String.prototype.toProperCase = function () {
 
 // names
 
-var resourceName = program.resource,
-    lowerName = resourceName && resourceName.toLowerCase(),
+var resourceName = program.resource.toLowerCase(),
+    lowerName = resourceName,
     properName = resourceName && resourceName.toProperCase();
 
 // end-of-line code
@@ -233,6 +233,7 @@ function createCommonFiles(callback) {
     '/data/models/user.js',
     '/data/models/consumer.js',
     '/data/config/db.js',
+    '/data/config/auto.js',
     '/data/utils/tokenize.js',
     '/routes/index.js',
     '/routes/auth/user.js',
