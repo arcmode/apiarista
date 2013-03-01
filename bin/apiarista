@@ -17,23 +17,22 @@ var program = require('commander'),
 
 program
   .version(require('../package').version)
-  .option('-i, install', 'install base api')
-  .option('-r, resource [ResourceName]', 'generate resource')
-  .option('-o, --owner [OwnerName]', 'set an owner field for the resource')
+  .option('-i, install', 'install base api only')
+  .option('-r, resource [ResourceName]', 'generate resource (default: "resource")')
+  .option('-o, --owner [OwnerName]', 'define an owner (default: "user")')
   .option('-a, --auth', 'authenticate the resource')
   .option('-t, --timestamp', 'add timestamp field to resource')
   .option('-f, --force', 'disable abort on path exists')
-  .option('-d, --debug', 'debug mode');
+  .option('-d, --debug', 'output debug data');
 
 // custom help
 
 program.on('--help', function(){
-  console.log('  Examples:');
+  console.log('  Example:');
   console.log('');
-  console.log('    $ apiarista init');
-  console.log('    $ apiarista resource blog name:String');
-  console.log('    $ apiarista resource Blog "name : { type: String }"');
-  console.log('    $ apiarista resource Has "blog : { type: ObjectId, ref: \'Blog\' }" --owned --timestamp');
+  console.log('    $ apiarista resource consumer --auth --timestamp');
+  console.log('    $ apiarista -r user -a --owner consumer -t');
+  console.log('    $ apiarista -r blog "title: { String, required: true }" -o user -t');
   console.log('');
 });
 
@@ -49,10 +48,10 @@ String.prototype.toProperCase = function () {
 
 // names
 
-var resourceName = program.resource,
+var defaultResourceName = 'resource',
+    resourceName = (program.resource && typeof program.resource === 'string') ? program.resource : defaultResourceName,
     lowerName = resourceName && resourceName.toLowerCase(),
     properName = resourceName && resourceName.toProperCase(),
-    defaultResourceName = 'resource',
     defaultLowerName = defaultResourceName.toLowerCase(),
     defaultProperName = defaultResourceName.toProperCase(),
     projectName = path.basename(currentDir);
@@ -110,7 +109,7 @@ if (program.install) {
                       methods.updateDependencies
                     );
 
-} else if (program.resource && typeof program.resource === 'string') {
+} else if (program.resource) {
 
   data.pipeline.push(
                       methods.createCommonDirs,
@@ -130,7 +129,7 @@ if (program.install) {
                     );
 } else {
 
-  abort('    you  must specify a name')
+  abort('    bad input')
 }
 
 // operate in series
