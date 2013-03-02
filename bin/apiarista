@@ -21,6 +21,7 @@ program
   .option('-r, resource [ResourceName]', 'generate resource (default: "resource")')
   .option('-o, --owner [OwnerName]', 'define an owner (default: "user")')
   .option('-a, --auth', 'authenticate the resource')
+  .option('-n, --namespace [NamespaceName]', 'namespace for routes (default: "resources")')
   .option('-f, --force', 'disable abort on path exists')
   .option('-d, --debug', 'output debug data');
 
@@ -71,6 +72,14 @@ var defaultResourceName = 'resource',
     defaultLowerName = defaultResourceName.toLowerCase(),
     defaultProperName = defaultResourceName.toProperCase(),
     projectName = path.basename(currentDir);
+
+// force namespace
+
+if (typeof program.namespace === 'undefined') {
+  program.namespace = true;
+}
+
+// defaults: put all default names inside a defaults object
 
 // data used during operations
 
@@ -455,15 +464,16 @@ function replaceConditionals(callback){
   // relevant paths
   var paths = [
     path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
+    path.join(currentDir, '/api/index.js'),
     path.join(currentDir, '/api/resources/' + lowerName)
   ];
 
   // program flags
-  var flags = [ 'owner', 'auth' ],
+  var flags = [ 'owner', 'auth', 'namespace' ],
       ifConditionals = [];
 
   // defaults
-  defaults = { owner: 'user' };
+  defaults = { owner: 'user', namespace: 'resources' };
 
   // generate data for replacement
   flags.forEach(function(flag, index) {
@@ -523,7 +533,7 @@ function replaceConditionals(callback){
 function upgradeApiIndex(callback){
   var targetPath = path.join(currentDir, '/api/index.js'),
       code = [],
-      leftSpace = '  ';
+      leftSpace = '    ';
 
   code.push('//CRUDs PLACEHOLDER');
   code.push('');
