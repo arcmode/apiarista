@@ -11,7 +11,7 @@ It purpose is to take an [app template](http://github.com/drojas/apiarista-templ
 
 ###Installation
 
-  $ npm install -g drojas/apiarista
+    $ npm install -g drojas/apiarista
 
 ###Usage
 
@@ -29,37 +29,61 @@ Now you can use `apiarista` to plug a generic API to your project
 
      Options:
 
-       -h, --help                   output usage information
-       -V, --version                output the version number
-       -i, install                  install base api only
-       -r, resource [ResourceName]  generate resource (default: "resource")
-       -o, --owner [OwnerName]      define an owner (default: "user")
-       -a, --auth                   authenticate the resource
-       -f, --force                  disable abort on path exists
-       -d, --debug                  output debug data
+       -h, --help                       output usage information
+       -V, --version                    output the version number
+       -i, install                      install base api only
+       -r, resource [ResourceName]      generate resource (defaults to "consumer --auth")
+       -o, --owner [OwnerName]          define an owner (defaults to "user")
+       -a, --auth                       authenticate the resource
+       -n, --namespace [NamespaceName]  namespace for routes (defaults to "resources")
+       -f, --force                      disable abort on path exists
+       -d, --debug                      output debug data
 
      Example:
 
        $ apiarista resource consumer --auth
        $ apiarista -r user -a --owner consumer
-       $ apiarista -r blog "title: { String, required: true }" -o user
+       $ apiarista -r poll "title: String" "ballots: [{ title: String }]" -o
 
-### Example
+###Example
 
-    $ apiarista resource Poll "title: String" "ballots: []" -o -t
+    $ apiarista resource consumer --auth
+    $ apiarista -r user -a --owner consumer
+    $ apiarista -r poll "title: String" "ballots: [{ title: String }]" -o
 
-The flags `-o` and `-t` will add a owner (`ref: 'User'`) and a timestamp (`Date.now) to the resource Schema.
+The flag `-o [Model]` will add a owner (`ref: 'Model'`). The default ref is 'User'.
 
-So, the following generates the same Schema:
+###Defaults and conventions:
 
-    $ apiarista -r Poll "title: String" "ballots: []" "user: { type: Schema.ObjectId, ref: 'User' }"
-    "date: { type: Date, default: Date.now }"
+`$ apiarista` asumes some command defaults that you can easily override.
 
-**IMPORTANT** `$ apiarista` also uses the `-o` flag to add ownership verification middleware to PUT and DELETE operations.
+**Flag equivalences**:
 
-I recommend to use the `-o` and `-t` flags when a resource need to be owned and timestamped.
+  `-r` = `resource`
 
-### Dependencies
+  `-i` = `install`
+
+  `-a` = `--auth`
+
+  `-o` = `--owner`
+
+**Command equivalences**:
+
+    $ apiarista resource
+    $ apiarista resource consumer -a
+
+    $ apiarista -r poll -o 
+    $ apiarista -r poll -o user
+
+    $ apiarista -i
+    $ apiarista -i --namespace resources
+
+
+**Notice**:
+
+`$ apiarista` also uses the `-o` flag to add ownership verification middleware to PUT and DELETE operations.
+
+###Dependencies
 
 [apiarista-template](http://github.com/drojas/apiarista-template/) depends on [Express](http://expressjs.com/) `v3.1.0`, [Mongoose](http://mongoosejs.com/) `v3.5.7` and [token.js](http://github.com/flesch/token.js/) `v0.0.1`.
 
@@ -67,12 +91,12 @@ I recommend to use the `-o` and `-t` flags when a resource need to be owned and 
 
     $ npm install
 
-### Finally
+###Finally
 
     $ echo -e "\nrequire('./api')(app);" >> app.js
     $ node app.js
 
-### Start consuming the API
+###Start consuming the API
 
     $ curl -X POST "http://127.0.0.1:3000/consumers"
 

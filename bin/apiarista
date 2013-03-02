@@ -11,34 +11,34 @@ var program = require('commander'),
     fs = require('fs'),
     replace = require('replace');
 
-// CLI
+//--* CLI
 
 program
   .version(require('../package').version)
   .option('-i, install', 'install base api only')
-  .option('-r, resource [ResourceName]', 'generate resource')
-  .option('-o, --owner [OwnerName]', 'define an owner (default: "user")')
+  .option('-r, resource [ResourceName]', 'generate resource (defaults to "consumer --auth")')
+  .option('-o, --owner [OwnerName]', 'define an owner (defaults to "user")')
   .option('-a, --auth', 'authenticate the resource')
-  .option('-n, --namespace [NamespaceName]', 'namespace for routes (default: "resources")')
+  .option('-n, --namespace [NamespaceName]', 'namespace for routes (defaults to "resources")')
   .option('-f, --force', 'disable abort on path exists')
   .option('-d, --debug', 'output debug data');
 
-// custom help
+//--* Custom help
 
 program.on('--help', function(){
   console.log('  Example:');
   console.log('');
   console.log('    $ apiarista resource consumer --auth');
   console.log('    $ apiarista -r user -a --owner consumer');
-  console.log('    $ apiarista -r blog "title: { String, required: true }" -o user');
+  console.log('    $ apiarista -r poll "title: String" "ballots: [{ title: String }]" -o');
   console.log('');
 });
 
-// parse arguments
+//--* Parse arguments
 
 program.parse(process.argv);
 
-// utilities
+//--* Utilities
 
 // from http://stackoverflow.com/a/5574446
 
@@ -73,26 +73,19 @@ function xor() {
 
 var eol = 'win32' == os.platform() ? '\r\n' : '\n';
 
-// input validation
+//--* Input validation and pre process
 
 if (!xor(program.install, program.resource)) {
   abort('you can (install XOR resource)');
 }
 
-// dirs to operate
+// if no resourceName is given, asumes consumer --auth
 
-var templateDir = path.join(__dirname, '../node_modules/apiarista-template'),
-    currentDir = process.cwd();
-
-// names
-
-var defaultResourceName = 'resource',
-    resourceName = (program.resource && typeof program.resource === 'string') ? program.resource : defaultResourceName,
-    lowerName = resourceName && resourceName.toLowerCase(),
-    properName = resourceName && resourceName.toProperCase(),
-    defaultLowerName = defaultResourceName.toLowerCase(),
-    defaultProperName = defaultResourceName.toProperCase(),
-    projectName = path.basename(currentDir);
+if (program.resource && program.resource === true) {
+  program.resource = 'consumer';
+  program.auth = true;
+  program.owner = undefined;
+}
 
 // force namespace
 
@@ -100,9 +93,18 @@ if (typeof program.namespace === 'undefined') {
   program.namespace = true;
 }
 
-// defaults: put all default names inside a defaults object
+//--* Dirs to operate
 
-// data used during operations
+var templateDir = path.join(__dirname, '../node_modules/apiarista-template'),
+    currentDir = process.cwd();
+
+//--* Names
+
+var lowerName = program.resource && program.resource.toLowerCase(),
+    properName = lowerName && lowerName.toProperCase(),
+    projectName = path.basename(currentDir).toLowerCase();
+
+//--* Data used during operations
 
 var methods = {
       testApp: testApp
@@ -127,7 +129,7 @@ var data = {
   created: []
 }
 
-// build pipeline
+//-* Build pipeline
 
 if (program.install) {
 
@@ -160,7 +162,7 @@ if (program.resource) {
                     );
 }
 
-// operate in series
+//--* Operate in series
 
 console.log();
 
@@ -355,7 +357,6 @@ function checkResourceExistence(callback){
 
 function createResource(callback){
       paths = function(name){
-        name = name || defaultLowerName;
         var p = [
           '/data/schemas/' + name + '.js',
           '/data/models/' + name + '.js',
@@ -381,7 +382,7 @@ function createResource(callback){
       if (ext !== '.js') {
         mkdirSync(targetRealPath, data.mkdirMode);
       } else {
-        var originRealPath = path.join(templateDir, paths()[index]),
+        var originRealPath = path.join(templateDir, paths('resource')[index]),
           templateFileContent = fs.readFileSync(originRealPath);
         writeFileSync(targetRealPath, templateFileContent, 'utf8');
       }
@@ -411,18 +412,18 @@ function replaceNames(callback){
     // plural
 
     // lowercase
-    { from: templateName(pluralize(defaultLowerName)), to: pluralize(lowerName) },
+    { from: templateName(pluralize('resource')), to: pluralize(lowerName) },
 
     // propercase
-    { from: templateName(pluralize(defaultProperName)), to: pluralize(properName) },
+    { from: templateName(pluralize('Resources')), to: pluralize(properName) },
 
     // singular
 
     // lowercase
-    { from: templateName(defaultLowerName), to: lowerName },
+    { from: templateName('resource'), to: lowerName },
 
     // propercase
-    { from: templateName(defaultProperName), to: properName }
+    { from: templateName('Resources'), to: properName }
   ];
 
   // replace resource name
