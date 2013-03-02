@@ -6,19 +6,17 @@
 
 var program = require('commander'),
     async = require('async'),
-    wrench = require('wrench'),
     path = require('path'),
     os = require('os'),
     fs = require('fs'),
-    replace = require('replace'),
-    assert = require('assert-plus');
+    replace = require('replace');
 
 // CLI
 
 program
   .version(require('../package').version)
   .option('-i, install', 'install base api only')
-  .option('-r, resource [ResourceName]', 'generate resource (default: "resource")')
+  .option('-r, resource [ResourceName]', 'generate resource')
   .option('-o, --owner [OwnerName]', 'define an owner (default: "user")')
   .option('-a, --auth', 'authenticate the resource')
   .option('-n, --namespace [NamespaceName]', 'namespace for routes (default: "resources")')
@@ -40,7 +38,9 @@ program.on('--help', function(){
 
 program.parse(process.argv);
 
-// utility to propercase the resource name
+// utilities
+
+// from http://stackoverflow.com/a/5574446
 
 String.prototype.toProperCase = function () {
     return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
@@ -50,13 +50,34 @@ function templateName(name) {
   return ('\\$' + name);
 }
 
+// it's silly I know
+
 function pluralize(name) {
   return (name + 's');
+}
+
+// from https://github.com/mcavage/node-restify/blob/master/lib/plugins/throttle.js#L22
+
+function xor() {
+  var x = false;
+  for (var i = 0; i < arguments.length; i++) {
+    if (arguments[i] && !x)
+      x = true;
+    else if (arguments[i] && x)
+      return (false);
+  }
+  return (x);
 }
 
 // end-of-line code
 
 var eol = 'win32' == os.platform() ? '\r\n' : '\n';
+
+// input validation
+
+if (!xor(program.install, program.resource)) {
+  abort('you can (install XOR resource)');
+}
 
 // dirs to operate
 
@@ -117,7 +138,9 @@ if (program.install) {
                       methods.updateDependencies
                     );
 
-} else if (program.resource) {
+}
+
+if (program.resource) {
 
   data.pipeline.push(
                       methods.createCommonDirs,
@@ -135,9 +158,6 @@ if (program.install) {
                       methods.upgradeApiIndex,
                       methods.updateDependencies
                     );
-} else {
-
-  abort('    bad input')
 }
 
 // operate in series
@@ -152,7 +172,12 @@ async.series(data.pipeline, function(err, results){
 
   // inspired by '../node_modules/express/bin/express'.
 
-  console.log('   plug the API:');
+  console.log('   add express-namespace:');
+  console.log('     add "require(\'express-namespace\');" before "app = express();" in your app.js');
+
+  console.log();
+
+  console.log('   plug the routes:');
   console.log('     $ echo -e "\\nrequire(\'./api\')(app);" >> app.js');
 
   console.log();
