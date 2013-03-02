@@ -45,16 +45,6 @@ String.prototype.toProperCase = function () {
     return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 };
 
-// names
-
-var defaultResourceName = 'resource',
-    resourceName = (program.resource && typeof program.resource === 'string') ? program.resource : defaultResourceName,
-    lowerName = resourceName && resourceName.toLowerCase(),
-    properName = resourceName && resourceName.toProperCase(),
-    defaultLowerName = defaultResourceName.toLowerCase(),
-    defaultProperName = defaultResourceName.toProperCase(),
-    projectName = path.basename(currentDir);
-
 function templateName(name) {
   return ('\\$' + name);
 }
@@ -71,6 +61,16 @@ var eol = 'win32' == os.platform() ? '\r\n' : '\n';
 
 var templateDir = path.join(__dirname, '../node_modules/apiarista-template'),
     currentDir = process.cwd();
+
+// names
+
+var defaultResourceName = 'resource',
+    resourceName = (program.resource && typeof program.resource === 'string') ? program.resource : defaultResourceName,
+    lowerName = resourceName && resourceName.toLowerCase(),
+    properName = resourceName && resourceName.toProperCase(),
+    defaultLowerName = defaultResourceName.toLowerCase(),
+    defaultProperName = defaultResourceName.toProperCase(),
+    projectName = path.basename(currentDir);
 
 // data used during operations
 
