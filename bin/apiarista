@@ -455,7 +455,7 @@ function replaceConditionals(callback){
   // relevant paths
   var paths = [
     path.join(currentDir, '/data/schemas/' + lowerName + '.js'),
-    path.join(currentDir, '/api/resources/' + lowerName + '/index.js')
+    path.join(currentDir, '/api/resources/' + lowerName)
   ];
 
   // program flags
@@ -487,7 +487,7 @@ function replaceConditionals(callback){
         regex: conditional.ifRegex,
         replacement: conditional.ifReplacement,
         paths: paths,
-        recursive: false,
+        recursive: true,
         silent: true
       });
       // replace $flag
@@ -496,7 +496,7 @@ function replaceConditionals(callback){
         regex: conditional.templateRegexLower,
         replacement: (typeof flag === 'string' ? flag.toLowerCase() : defName && defName.toLowerCase()),
         paths: paths,
-        recursive: false,
+        recursive: true,
         silent: true
       });
       // replace $Flag
@@ -504,7 +504,7 @@ function replaceConditionals(callback){
         regex: conditional.templateRegexProper,
         replacement: (typeof flag === 'string' ? flag.toProperCase() : defName && defName.toProperCase()),
         paths: paths,
-        recursive: false,
+        recursive: true,
         silent: true
       });
     };
