@@ -415,7 +415,7 @@ function replaceNames(callback){
     { from: templateName(pluralize('resource')), to: pluralize(lowerName) },
 
     // propercase
-    { from: templateName(pluralize('Resources')), to: pluralize(properName) },
+    { from: templateName(pluralize('Resource')), to: pluralize(properName) },
 
     // singular
 
@@ -423,7 +423,7 @@ function replaceNames(callback){
     { from: templateName('resource'), to: lowerName },
 
     // propercase
-    { from: templateName('Resources'), to: properName }
+    { from: templateName('Resource'), to: properName }
   ];
 
   // replace resource name
