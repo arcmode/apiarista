@@ -1,9 +1,40 @@
--- add command to create admin consumer configuration
+-- apiarista --client
 
-	- create consumer and get :id and secret
+	generate socketio and backbone assets for the resource
 
-	- create /data/config/consumers.js
+	apiarista -r -c blog reuses the same input data
+
+1 block/unblock crud routes by generated config file 
+
+	apiarista -r consumer --block crud
+
+	apiarista -r consumer --block cud
+
+		-> to allow only read
+	
+	use /api/resources/resource/index.js or /api/resources/resource/config.js
+
+
+	(blocked routes available only for dev NODE_ENV)
+
+2 add command to create resources instances
+
+	- create app resource with all urls blocked
+
+	- create consumer resource --auth
+
+using 1) to create a consumer withou
 
 -- deal with throttle
 
 -- take db name from pkg instead of basename(process.cwd())
+
+-- make a generic relationship validator so authOwnership$Owner becomes validate('owner', '$owner')
+
+	apiarista -r user -o consumer
+
+	becomes 
+
+	apiarista -r user --relate owner:consumer --validate:consumer:ud --pre-load consumer
+
+-- crear una libreria que parsea un esquema de applicacion y ejecuta apiarista en serie para cerar la aplicacion
