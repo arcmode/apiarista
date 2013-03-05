@@ -311,7 +311,7 @@ function replaceConfig(callback){
 
   // replace db connection name
   replace({
-    regex: templateName('apiarista-template'),
+    regex: 'apiarista-template',
     replacement: projectName,
     paths: [path.join(currentDir, '/data/config')],
     recursive: true,
