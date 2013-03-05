@@ -117,11 +117,11 @@ var methods = {
     , upgradeSchema: upgradeSchema
     , replaceConditionals: replaceConditionals
     , upgradeApiIndex: upgradeApiIndex
-    , updateDependencies: updateDependencies
+    // , updateDependencies: updateDependencies
   };
 
 var data = {
-  pipeline: [testApp],
+  pipeline: [],
   mkdirMode: 0777 & (~process.umask()),
   app: undefined,
   absent: [],
@@ -136,8 +136,8 @@ if (program.install) {
   data.pipeline.push(
                       methods.createCommonDirs,
                       methods.createCommonFiles,
-                      methods.replaceConfig,
-                      methods.updateDependencies
+                      // methods.updateDependencies,
+                      methods.replaceConfig
                     );
 
 }
@@ -147,6 +147,7 @@ if (program.resource) {
   data.pipeline.push(
                       methods.createCommonDirs,
                       methods.createCommonFiles,
+                      // methods.updateDependencies,
                       methods.replaceConfig
                     );
 
@@ -157,8 +158,7 @@ if (program.resource) {
                       methods.replaceNames,
                       methods.upgradeSchema,
                       methods.replaceConditionals,
-                      methods.upgradeApiIndex,
-                      methods.updateDependencies
+                      methods.upgradeApiIndex
                     );
 }
 
@@ -271,6 +271,8 @@ function createCommonDirs(callback) {
 
 function createCommonFiles(callback) {
   var files = [
+    '/package.json',
+    '/app.js',
     '/data/config/db.js',
     '/data/config/auto.js',
     '/data/utils/tokenize.js',
@@ -330,6 +332,7 @@ function checkResourceExistence(callback){
         '/data/models/' + lowerName + '.js',
         '/api/resources/' + lowerName,
         '/api/resources/' + lowerName + '/index.js',
+        '/api/resources/' + lowerName + '/realtime.js',
         '/api/resources/' + lowerName + '/crud',
         '/api/resources/' + lowerName + '/crud/list.js',
         '/api/resources/' + lowerName + '/crud/create.js',
@@ -362,6 +365,7 @@ function createResource(callback){
           '/data/models/' + name + '.js',
           '/api/resources/' + name,
           '/api/resources/' + name + '/index.js',
+          '/api/resources/' + name + '/realtime.js',
           '/api/resources/' + name + '/crud',
           '/api/resources/' + name + '/crud/list.js',
           '/api/resources/' + name + '/crud/create.js',
@@ -495,7 +499,7 @@ function replaceConditionals(callback){
   ];
 
   // program flags
-  var flags = [ 'owner', 'auth', 'namespace' ],
+  var flags = [ 'owner', 'auth', 'namespace', ],
       ifConditionals = [];
 
   // defaults
@@ -584,33 +588,33 @@ function upgradeApiIndex(callback){
  *
  */
 
-function updateDependencies(callback){
-  var targetPkgPath = path.join(currentDir, '/package.json'),
-      targetPkg = require(targetPkgPath),
-      originPkgPath = path.join(templateDir, '/package.json'),
-      originPkg = require(originPkgPath);
+// function updateDependencies(callback){
+//   var targetPkgPath = path.join(currentDir, '/package.json'),
+//       targetPkg = require(targetPkgPath),
+//       originPkgPath = path.join(templateDir, '/package.json'),
+//       originPkg = require(originPkgPath);
 
-  // load target pkg
-  var merge = targetPkg;
+//   // load target pkg
+//   var merge = targetPkg;
 
-  // dont merge irrelevant dependencies
-  var exclude = {
-    "jade": "*",
-    "stylus": "*"
-  };
+//   // dont merge irrelevant dependencies
+//   var exclude = {
+//     "jade": "*",
+//     "stylus": "*"
+//   };
 
-  // add origin dependencies
-  for (var key in originPkg.dependencies){
-    if (!merge.dependencies.hasOwnProperty(key) && !(key in exclude)) {
-      merge.dependencies[key] = originPkg.dependencies[key];
-    }
-  }
+//   // add origin dependencies
+//   for (var key in originPkg.dependencies){
+//     if (!merge.dependencies.hasOwnProperty(key) && !(key in exclude)) {
+//       merge.dependencies[key] = originPkg.dependencies[key];
+//     }
+//   }
 
-  // write updated pkg
-  writeFileSync(targetPkgPath, JSON.stringify(merge, null, 4), 'utf8', 'updated');
+//   // write updated pkg
+//   writeFileSync(targetPkgPath, JSON.stringify(merge, null, 4), 'utf8', 'updated');
 
-  callback(null, 'updateDependencies');
-};
+//   callback(null, 'updateDependencies');
+// };
 
 // inspired by '../node_modules/express/bin/express'.
 
