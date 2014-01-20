@@ -81,7 +81,7 @@ The flag `-o [Model]` will add a owner (`ref: 'Model'`). The default ref is 'Use
 
 **Notice**:
 
-`$ apiarista` also uses the `-o` flag to add ownership verification middleware to PUT and DELETE operations.
+`$ apiarista` also uses the `-o` flag to add ownership verification middleware to PUT and DELETE operations.-=-=-=-.
 
 ###Dependencies
 
@@ -98,7 +98,9 @@ The flag `-o [Model]` will add a owner (`ref: 'Model'`). The default ref is 'Use
 
 ###Start consuming the API
 
-    $ curl -X POST "http://127.0.0.1:3000/consumers"
+    $ curl -X POST "http://127.0.0.1:3000/resources/consumers"
+
+#######todo: log generator commands to allow reproduction 
 
 ------------
 

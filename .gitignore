@@ -1,4 +1,5 @@
 node_modules/
+bin/public
 bin/data
 bin/api
 bin/routes
